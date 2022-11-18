@@ -25,4 +25,4 @@ for i in $(oc get pods -n openshift-ingress | grep router | grep -v default | aw
 
 
 #tarball the contents
-tar czf haproxy_output.tar.gz $TARGETDIR/
+tar czf haproxy-gather-$(date +"%Y-%m-%d-%H-%M-%S").tar.gz $TARGETDIR/
