@@ -21,7 +21,7 @@ for i in $(ls ./haproxy-gather/ | grep dirty.out); do column -s, -t < ./haproxy-
 oc cp ${default}:haproxy.config -n openshift-ingress ${TARGETDIR}/default_haproxy.config
 
 #gather haproxy.config from any other non-default router pods (probably going to get more than we want but better than not enough)
-for i in $(oc get pods -n openshift-ingress | grep router | grep -v default | awk {'print $1'}); do oc cp ${i}:haproxy.config -n openshift-ingress ${TARGETDIR}/{i}_haproxy.config; done
+for i in $(oc get pods -n openshift-ingress | grep router | grep -v default | awk {'print $1'}); do oc cp ${i}:haproxy.config -n openshift-ingress ${TARGETDIR}/${i}_haproxy.config; done
 
 
 #tarball the contents
