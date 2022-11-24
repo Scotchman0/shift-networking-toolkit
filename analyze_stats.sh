@@ -37,7 +37,7 @@ echo ""
 #backend LB strategy:
 echo "LB strategy for this route"
 echo "=================================================================="
-for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE | grep BACKEND | awk {'print $50'}; done
+for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE | grep BACKEND | grep -E 'random|roundrobin|leastconn|source'; done
 echo "=================================================================="
 
 
@@ -50,7 +50,9 @@ highlights_block () {
 	cat $CONFIG | grep -A5 $ROUTE | grep -A5 ^backend    > config_${ROUTE}_highlight.out
 
 	#gather raw summary bundle for verification
-	for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE >> rawstats_${ROUTE}_highlight.out; done
+	#set header first:
+	for i in $(ls ./ | grep _cleaned.out | head -n 1); do cat $i | head -n 1 > ${ROUTE}_highlight.out; done
+	for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE >> ${ROUTE}_highlight.out; done
 
 }
 
