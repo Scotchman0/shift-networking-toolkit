@@ -1,5 +1,8 @@
 #!/bin/bash
 #haproxy stats parser
+#script to gather haproxy stats from each routerpod for analysis
+#provided as-is with no warranties for use in supporting Red Hat troubleshooting efforts
+
 
 echo "this script will summarize and export relevant haproxy stats for fast reference"
 
@@ -42,12 +45,12 @@ echo "=================================================================="
 ##########end DATAGATHER#########
 }
 
-highlights_block (){
+highlights_block () {
 	#this block dumps the raw haproxy.config route detail into a separate file for independant verification based on $ROUTE
-	cat $CONFIG | grep -A5 -B5 $ROUTE > config_${ROUTE}_highlight.out 
+	cat $CONFIG | grep -A5 $ROUTE | grep -A5 ^backend    > config_${ROUTE}_highlight.out
 
 	#gather raw summary bundle for verification
-	for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE >> rawstats_${ROUTE}_highlight.out
+	for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE >> rawstats_${ROUTE}_highlight.out; done
 
 }
 
