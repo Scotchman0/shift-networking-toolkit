@@ -3,7 +3,7 @@ A collection of scripts designed to aide in data gather and analysis of OpenShif
 
 It is always best to open a support case to discuss with an engineer about the findings from your own cluster, and these scripts should be considered supplemental to an analysis in partnership with Red Hat. However, they are available for an initial look at your systems performance, and may be recommended as part of data-gathering efforts to streamline debugging and deeper understanding on haproxy handling for your openshift cluster. 
 
-This repository and all included scripts are debugging tools provided without warranty. They offers no support from Red Hat or any other official source. Please use at your own risk.
+This repository and all included scripts are debugging tools provided without warranty. They offer no support from Red Hat or any other official source. Please use at your own risk.
 
 # haproxy-gather.sh
 Can be used to gather a summary output of all router-pods statistics from your cluster at once along with haproxy.config for help in understanding more about how your cluster is routing traffic to it's backend pods.
