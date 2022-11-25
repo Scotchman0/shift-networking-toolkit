@@ -25,19 +25,20 @@ echo ""
 
 #HTTP response values:
 echo "HTTP response values 1xx, 2xx, 3xx, 4xx, 5xx totals"
-echo "alignment is not always perfect here due to nature of stats gather, refer to generated ${ROUTE}_highlight.out for complete table.
+echo "alignment is not always perfect here due to nature of stats gather, refer to generated ${ROUTE}_highlight.out for complete table."
 echo "=================================================================="
 for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE | awk '{print $2, $32, $33, $34, $35, $36}' ; done
 echo "================================================================="
 
-echo "" 
+echo ""
+
 
 ##########end DATAGATHER#########
 }
 
 highlights_block () {
 	#this block dumps the raw haproxy.config route detail into a separate file for independant verification based on $ROUTE
-	cat $CONFIG | grep -A5 $ROUTE | grep -A5 ^backend    > config_${ROUTE}_highlight.out
+	cat $CONFIG | grep -A5 $ROUTE | grep -A5 ^backend > config_${ROUTE}_highlight.out
 
 	#gather raw summary bundle for verification
 	#set header first:
