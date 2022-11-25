@@ -13,8 +13,6 @@ echo "what is the route you wish to look for? insert the route name and press re
 read ROUTE
 
 DATAGATHER() {
-###########START DATAGATHER#########
-
 #LBTOT value count per pod:
 echo "lbtot values -- note that these are UNIQUE values and if cookies are enabled will not increment after initial hit for that client"
 echo "================================================================="
@@ -31,9 +29,6 @@ for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep 
 echo "================================================================="
 
 echo ""
-
-
-##########end DATAGATHER#########
 }
 
 highlights_block () {
