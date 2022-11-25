@@ -32,14 +32,30 @@ echo ""
 }
 
 highlights_block () {
-	#this block dumps the raw haproxy.config route detail into a separate file for independant verification based on $ROUTE
-	cat $CONFIG | grep -A5 $ROUTE | grep -A5 ^backend > config_${ROUTE}_highlight.out
+    #this block dumps the raw haproxy.config route detail into a separate file for independant verification based on $ROUTE
+    cat $CONFIG | grep -A5 $ROUTE | grep -A5 ^backend > config_${ROUTE}_highlight.out
 
-	#gather raw summary bundle for verification
-	#set header first:
-	for i in $(ls ./ | grep _cleaned.out | head -n 1); do cat $i | head -n 1 > ${ROUTE}_highlight.out; done
-	#export the route string sets (total) into summary highlight.
-	for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE >> ${ROUTE}_highlight.out; done
+    if [[ $(echo $CONFIG | grep default) ]]
+        then
+            #gather raw summary bundle for verification
+            #set header first:
+            for i in $(ls ./ | grep _cleaned.out | grep default |  head -n 1); do cat $i | sed 's/|/ /' | head -n 1 > ${ROUTE}_highlight.out; done
+            #export the route string sets (total) into summary highlight.
+            for i in $(ls ./ | grep _cleaned.out); do cat $i | sed 's/|/ /' | grep $ROUTE >> ${ROUTE}_highlight.out; done
+        else
+            #based on config, confirm which router pods are relevant
+            echo "non-default haproxy.config found, please confirm which set of sharded router pods you wish to examine"
+            echo "please provide a greppable string for <your-shard> that will be used to scope the search to router-<your-shard>-*_cleaned.out files and press return"
+            #get variable to search for
+            read SHARDNAME
+            # get header alignment from sharded routerpod stats output
+            for i in $(ls ./ | grep _cleaned.out | grep ${SHARDNAME} |  head -n 1); do cat $i | sed 's/|/ /' | head -n 1 > ${ROUTE}_highlight.out; done
+            # get route/pod stats from sharded instance
+            for i in $(ls ./ | grep _cleaned.out | grep ${SHARDNAME}); do cat $i | sed 's/|/ /' | grep $ROUTE >> ${ROUTE}_highlight.out; done
+
+
+    fi
+
 	
 	echo "filenames ${ROUTE}_highlight.out and config_${ROUTE}_highlight.out have been created for your convenience"
 	echo "open with less and type -S to chop lines, or with vim and use :set nowrap to view the route highlight block"
