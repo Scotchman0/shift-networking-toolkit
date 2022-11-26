@@ -6,7 +6,7 @@
 #set variables:
 cmd="echo 'show stat' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 info="echo 'show info' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
-error="echo 'show error' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
+error="echo 'show errors' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 
 #define the first routerpod that is for default set and is also in Running status to avoid pulling a failing container's config
 default=$(oc get pods -n openshift-ingress | grep default | grep Running | awk {'print $1'} | head -n 1) 
