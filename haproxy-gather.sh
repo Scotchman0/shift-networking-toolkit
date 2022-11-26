@@ -20,13 +20,13 @@ mkdir $TARGETDIR/pod_info
 oc get pods -n openshift-ingress -o wide > $TARGETDIR/pod_overview.out
 
 #gather raw stats output for each routerpod:
-for i in $(oc get pods -n openshift-ingress | grep router | awk {'print $1'}); do oc exec $i -n openshift-ingress -- bash -c "$cmd" > ${TARGETDIR}/${i}_haproxystats_dirty.out; done
+for i in $(oc get pods -n openshift-ingress | grep router | awk {'print $1'}); do oc exec $i -n openshift-ingress -- bash -c "$cmd" > ${TARGETDIR}/${i}_rawstats; done
 
 #clean the stats entries for readability:
-for i in $(ls ./haproxy-gather/ | grep dirty.out); do column -s, -t < ./haproxy-gather/${i} | less -#2 -N -S > ./haproxy-gather/${i}_cleaned.out; done
+for i in $(ls ./haproxy-gather/ | grep _rawstats); do column -s, -t < ./haproxy-gather/${i} | less -#2 -N -S > ./haproxy-gather/${i}_cleaned.out; done
 
 #move the dirtystats to $TARGETDIR/raw_stats
-for i in $(ls ./haproxy-gather/ | grep "_dirty.out$"); do mv ./haproxy-gather/${i} ./haproxy-gather/raw_stats/; done
+for i in $(ls ./haproxy-gather/ | grep "_rawstats$"); do mv ./haproxy-gather/${i} ./haproxy-gather/raw_stats/; done
 
 #gather info tables
 for i in $(oc get pods -n openshift-ingress | grep router | awk {'print $1'}); do oc exec $i -n openshift-ingress -- bash -c "$info" > ${TARGETDIR}/pod_info/${i}_info.out; done
