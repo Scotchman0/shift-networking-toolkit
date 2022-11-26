@@ -40,7 +40,6 @@ for i in $(oc get pods -n openshift-ingress | grep router | awk {'print $1'}); d
 oc cp ${default}:haproxy.config -n openshift-ingress ${TARGETDIR}/default_haproxy.config
 
 #gather haproxy.config from any other non-default router pods
-#for i in $(oc get pods -n openshift-ingress | grep router | grep -v default | sort -u | awk {'print $1'}); do oc cp ${i}:haproxy.config -n openshift-ingress ${TARGETDIR}/${i}_haproxy.config; done
 for i in $(oc get deployment -n openshift-ingress | grep -v default | awk {'print $1'} | grep -v NAME); do a=$(oc get pod -n openshift-ingress | grep ${i} | awk {'print $1'} | head -n 1); oc cp ${a}:haproxy.config -n openshift-ingress $TARGETDIR/${i}_haproxy.config; done
 
 #tarball the contents
