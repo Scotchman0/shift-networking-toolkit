@@ -13,8 +13,8 @@ TARGETDIR=./haproxy-gather
 #create folder
 mkdir $TARGETDIR
 mkdir $TARGETDIR/raw_stats
-mkdir $TARGETDIR/pod_errors
-mkdir $TARGETDIR/pod_info
+mkdir $TARGETDIR/haproxy_errors
+mkdir $TARGETDIR/haproxy_info
 
 #grab pod overview:
 oc get pods -n openshift-ingress -o wide > $TARGETDIR/pod_overview.out
@@ -29,10 +29,10 @@ for i in $(ls ./haproxy-gather/ | grep _rawstats); do column -s, -t < ./haproxy-
 for i in $(ls ./haproxy-gather/ | grep "_rawstats$"); do mv ./haproxy-gather/${i} ./haproxy-gather/raw_stats/; done
 
 #gather info tables
-for i in $(oc get pods -n openshift-ingress | grep router | awk {'print $1'}); do oc exec $i -n openshift-ingress -- bash -c "$info" > ${TARGETDIR}/pod_info/${i}_info.out; done
+for i in $(oc get pods -n openshift-ingress | grep router | awk {'print $1'}); do oc exec $i -n openshift-ingress -- bash -c "$info" > ${TARGETDIR}/haproxy_info/${i}_info.out; done
 
 #gather error logs
-for i in $(oc get pods -n openshift-ingress | grep router | awk {'print $1'}); do oc exec $i -n openshift-ingress -- bash -c "$error" > ${TARGETDIR}/pod_errors/${i}_errors.out; done
+for i in $(oc get pods -n openshift-ingress | grep router | awk {'print $1'}); do oc exec $i -n openshift-ingress -- bash -c "$error" > ${TARGETDIR}/haproxy_errors/${i}_errors.out; done
 
 #gather haproxy.config to pair with output:
 oc cp ${default}:haproxy.config -n openshift-ingress ${TARGETDIR}/default_haproxy.config
