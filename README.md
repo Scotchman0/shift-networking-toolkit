@@ -10,6 +10,13 @@ Can be used to gather a summary output of all router-pods statistics from your c
 
 Note that router pod hit statistics being gathered are subject to intermittent log clears, and so repeated gathers may be necessary to get a fully comprehensive view of activity. Stats are not persistent even through the lifespan of a container and are cleared frequently; They are reset to 0 every time haproxy.config reloads. You may find that this occurs very often in a cluster with a lot of churn/new pods/deployments - 5s. Or longer if deployments are static and routes aren't changing you may get a much larger sample size. You may need to run the haproxy-gather.sh script a few times to get a solid sample depending on your cluster configuration/time between test calls and gather run. 
 
+Usage on 3.11 versus 4.x:
+Set the values in the script to run on 3.11 or 4.x clusters (4.x set as default)
+~~~
+namespace="openshift-ingress" #If running on 3.11='default', 4.x='openshift-ingress'
+selector="default" #If running on 3.11='router' #4.x='default'
+~~~
+
 See https://access.redhat.com/solutions/6987555 for more information on how to analyze contents pulled by haproxy-gather, and refer to the documentation at https://docs.openshift.com/container-platform/4.11/networking/routes/route-configuration.html#nw-route-specific-annotations_route-configuration for more on how to streamline and optimize your routes. This script is designed primarily to aggregate data for easier troubleshooting efforts. 
 
 # Analyze_stats.sh
