@@ -26,7 +26,7 @@ mkdir $TARGETDIR/haproxy_info
 oc get pods -n ${namespace} -o wide > $TARGETDIR/pod_overview.out
 
 #grab pod threadcount:
-for i in $(oc get po -n ${namespace} --no-headers | grep router | awk '{print $1}');do echo "Pod name: $i" &&  oc exec $i -- ps auuxx|grep haproxy|wc -l >> $TARGETDIR/pod_thread_count.out; done
+for i in $(oc get po -n ${namespace} --no-headers | grep router | awk '{print $1}');do echo "Pod name: $i" &&  oc exec $i -n ${namespace} -- ps auuxx|grep haproxy|wc -l >> $TARGETDIR/pod_thread_count.out; done
 
 #gather raw stats output for each routerpod for this reload cycle:
 for i in $(oc get pods -n ${namespace} | grep router | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$cmd" > ${TARGETDIR}/${i}_rawstats; done
