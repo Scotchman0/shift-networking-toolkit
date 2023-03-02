@@ -39,7 +39,7 @@ highlights_block () {
         then
             #gather raw summary bundle for verification
             #set header first:
-            for i in $(ls ./ | grep _cleaned.out | grep default |  head -n 1); do cat $i | sed 's/|/ /' | head -n 1 > ${ROUTE}_highlight.out; done
+            for i in $(ls ./ | grep _cleaned.out | grep default |  head -n 1); do echo $i; cat $i | sed 's/|/ /' | head -n 1 > ${ROUTE}_highlight.out; done
             #export the route string sets (total) into summary highlight.
             for i in $(ls ./ | grep _cleaned.out); do cat $i | sed 's/|/ /' | grep $ROUTE >> ${ROUTE}_highlight.out; done
         else
@@ -49,9 +49,9 @@ highlights_block () {
             #get variable to search for
             read SHARDNAME
             # get header alignment from sharded routerpod stats output
-            for i in $(ls ./ | grep _cleaned.out | grep ${SHARDNAME} |  head -n 1); do cat $i | sed 's/|/ /' | head -n 1 > ${ROUTE}_highlight.out; done
+            for i in $(ls ./ | grep _cleaned.out | grep ${SHARDNAME} |  head -n 1); do echo $i; cat $i | sed 's/|/ /' | head -n 1 > ${ROUTE}_highlight.out; done
             # get route/pod stats from sharded instance
-            for i in $(ls ./ | grep _cleaned.out | grep ${SHARDNAME}); do cat $i | sed 's/|/ /' | grep $ROUTE >> ${ROUTE}_highlight.out; done
+            for i in $(ls ./ | grep _cleaned.out | grep ${SHARDNAME}); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE >> ${ROUTE}_highlight.out; done
 
 
     fi
