@@ -20,6 +20,7 @@ mkdir $TARGETDIR
 mkdir $TARGETDIR/raw_stats
 mkdir $TARGETDIR/haproxy_errors
 mkdir $TARGETDIR/haproxy_info
+mkdir $TARGETDIR/pod_logs
 
 #grab pod overview:
 oc get pods -n ${namespace} -o wide > $TARGETDIR/pod_overview.out
@@ -30,8 +31,11 @@ for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'prin
 #clean the stats entries for readability:
 for i in $(ls ${TARGETDIR} | grep _rawstats); do column -s, -t < ${TARGETDIR}/${i} | less -#2 -N -S > ${TARGETDIR}/${i}_cleaned.out; done
 
-#move the dirtystats to $TARGETDIR/raw_stats
+#move the rawstats to $TARGETDIR/raw_stats
 for i in $(ls ${TARGETDIR} | grep "_rawstats$"); do mv ${TARGETDIR}/${i} ${TARGETDIR}/raw_stats/; done
+
+#rename files in rawstats to .csv for easy-open
+for i in $(ls ${TARGETDIR}/raw_stats/); do mv ${TARGETDIR}/raw_stats/${i} ${TARGETDIR}/raw_stats/${i}.csv
 
 #gather info tables
 for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$info" > ${TARGETDIR}/haproxy_info/${i}_info.out; done
@@ -44,6 +48,9 @@ oc cp ${default}:haproxy.config -n ${namespace} ${TARGETDIR}/default_haproxy.con
 
 #gather haproxy.config from any other non-default router pods (shards)
 for i in $(oc get deployment -n ${namespace} | grep -v router-default | awk {'print $1'} | grep -v NAME); do a=$(oc get pod -n ${namespace} | grep ${i} | awk {'print $1'} | head -n 1); oc cp ${a}:haproxy.config -n ${namespace} $TARGETDIR/${i}_haproxy.config; done
+
+#get logs for all router pods (done last because it takes longer and may interfere with metrics pulls which are time-sensitive):
+for i in $(oc get deployment -n ${namespace} | grep router | grep Running | awk {'print $1'} | grep -v NAME); do oc logs ${i} -n ${name} > ${TARGETDIR}/pod_logs/${i}_logs.out
 
 #tarball the contents
 tar czf ${TARGETDIR}.tar.gz $TARGETDIR/
