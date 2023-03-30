@@ -34,7 +34,7 @@ for i in $(ls ${TARGETDIR} | grep _rawstats); do column -s, -t < ${TARGETDIR}/${
 for i in $(ls ${TARGETDIR} | grep "_rawstats$"); do mv ${TARGETDIR}/${i} ${TARGETDIR}/raw_stats/; done
 
 #rename files in rawstats to .csv for easy-open
-for i in $(ls ${TARGETDIR}/raw_stats/); do mv ${TARGETDIR}/raw_stats/${i} ${TARGETDIR}/raw_stats/${i}.csv
+for i in $(ls ${TARGETDIR}/raw_stats/); do mv ${TARGETDIR}/raw_stats/${i} ${TARGETDIR}/raw_stats/${i}.csv; done
 
 #gather info tables
 for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$info" > ${TARGETDIR}/haproxy_info/${i}_info.out; done
