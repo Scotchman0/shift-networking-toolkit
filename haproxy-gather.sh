@@ -20,7 +20,6 @@ mkdir $TARGETDIR
 mkdir $TARGETDIR/raw_stats
 mkdir $TARGETDIR/haproxy_errors
 mkdir $TARGETDIR/haproxy_info
-mkdir $TARGETDIR/pod_logs
 
 #grab pod overview:
 oc get pods -n ${namespace} -o wide > $TARGETDIR/pod_overview.out
@@ -48,9 +47,6 @@ oc cp ${default}:haproxy.config -n ${namespace} ${TARGETDIR}/default_haproxy.con
 
 #gather haproxy.config from any other non-default router pods (shards)
 for i in $(oc get deployment -n ${namespace} | grep -v router-default | awk {'print $1'} | grep -v NAME); do a=$(oc get pod -n ${namespace} | grep ${i} | awk {'print $1'} | head -n 1); oc cp ${a}:haproxy.config -n ${namespace} $TARGETDIR/${i}_haproxy.config; done
-
-#get logs for all router pods (done last because it takes longer and may interfere with metrics pulls which are time-sensitive):
-for i in $(oc get deployment -n ${namespace} | grep router | grep Running | awk {'print $1'} | grep -v NAME); do oc logs ${i} -n ${name} > ${TARGETDIR}/pod_logs/${i}_logs.out
 
 #tarball the contents
 tar czf ${TARGETDIR}.tar.gz $TARGETDIR/
