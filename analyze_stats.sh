@@ -4,12 +4,18 @@
 #provided as-is with no warranties for use in supporting Red Hat troubleshooting efforts
 
 echo "this script will summarize and export relevant haproxy stats for fast reference: lbtot (hits) and http response values"
-echo "this script will run a lookup on every file with matching '_cleaned.out' filename in this folder, please run this script inside haproxy-gather/"
+echo "this script will run a lookup on every file with matching '_cleaned.out' filename in this folder, please run this script inside the 'haproxy-gather' folder"
 echo ""
 echo "please specify which haproxy.config we need to examine by inserting the '<filename>_haproxy.config' below and pressing return"
+echo "available configs:"
+echo ""
+ls | grep haproxy
+echo ""
+echo "please specify which haproxy.config we need to examine and press return. (example: default_haproxy.config)"
 read CONFIG
 
-echo "what is the route you wish to look for? insert the route name and press return - script will grep for this string"
+echo ""
+echo "Please specify the route name (not the fqdn) from (oc get route -n <namespace>); example: myprodroute"
 read ROUTE
 
 DATAGATHER() {
