@@ -25,3 +25,6 @@ This is a fast-analysis script that will grab the lbtot hit counter for your des
 # Haproxy_backend_summary.sh
 A simple count check on how many back-ends are in use per haproxy.config (and therefore, sharded instance of your router deployments); good for validating total expected load on the pods, and may also provide insight into how much work these pods are doing if observing that there is latency during haproxy.config refresh or otherwise. 
 
+# Curl_loop_until_error.sh
+A basic script to run a curl against a target address with logging parameter options. Designed to catch an unexpected response like a 502 error.
+usage: curl_loop_until_error.sh '<url>' (can also modify the script directly to include additional parameters like payloads/POST type instead of GET). Helpful when we need to catch a rare occurrance and can't watch for explicit timeframes.
