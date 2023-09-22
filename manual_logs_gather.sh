@@ -1,7 +1,9 @@
 #!/bin/bash
+#This script serves as a way to acquire all container pod logs from a target namespace for review/analysis in the event a must-gather or namespace-inspect fails to run
+#Try also: $ oc adm must-gather --host-network=true
 
 # Set variables
-namespace=openshift-ovn-kubernetes
+namespace=<your-target-namespace-here> ##set this variable to your desired namespace
 
 #mkdir namespace directory
 mkdir ./${namespace}
