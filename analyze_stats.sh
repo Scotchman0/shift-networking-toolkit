@@ -18,6 +18,9 @@ echo ""
 echo "Please specify the route name (not the fqdn) from (oc get route -n <namespace>); example: myprodroute"
 read ROUTE
 
+
+##TODO: improve this block - needs selector confrm to check only SHARDS when non-default haproxy.config is selected
+
 DATAGATHER() {
 #LBTOT value count per pod:
 echo "lbtot values -- note that these are UNIQUE values and if cookies are enabled will not increment after initial hit for that client"
