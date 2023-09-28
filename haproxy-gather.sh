@@ -8,7 +8,7 @@ cmd="echo 'show stat' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 info="echo 'show info' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 error="echo 'show errors' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 namespace="openshift-ingress" #If running on 3.11='default', 4.x='openshift-ingress'
-selector="default" #If running on 3.11='router' #4.x='default'
+selector="default" #If running on 3.11='router' #4.x='default' #defines which pod has the default haproxy.config file
 
 #define the first routerpod that is for default set and is also in Running status to avoid pulling a failing container's config
 default=$(oc get pods -n ${namespace} | grep ${selector} | grep Running | awk {'print $1'} | head -n 1) 
