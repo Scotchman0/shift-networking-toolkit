@@ -7,8 +7,11 @@
 cmd="echo 'show stat' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 info="echo 'show info' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 error="echo 'show errors' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
+pools="echo 'show pools' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
+sessions="echo 'show sess all' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
+rd="echo 'show rd' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 namespace="openshift-ingress" #If running on 3.11='default', 4.x='openshift-ingress'
-selector="default" #If running on 3.11='router' #4.x='default'
+selector="default" #If running on 3.11='router' #4.x='default' #defines which pod has the default haproxy.config file
 
 #define the first routerpod that is for default set and is also in Running status to avoid pulling a failing container's config
 default=$(oc get pods -n ${namespace} | grep ${selector} | grep Running | awk {'print $1'} | head -n 1) 
@@ -18,7 +21,6 @@ TARGETDIR=./haproxy-gather-${DATE}
 #create folder
 mkdir $TARGETDIR
 mkdir $TARGETDIR/raw_stats
-mkdir $TARGETDIR/haproxy_errors
 mkdir $TARGETDIR/haproxy_info
 
 #grab pod overview:
@@ -36,11 +38,22 @@ for i in $(ls ${TARGETDIR} | grep "_rawstats$"); do mv ${TARGETDIR}/${i} ${TARGE
 #rename files in rawstats to .csv for easy-open
 for i in $(ls ${TARGETDIR}/raw_stats/); do mv ${TARGETDIR}/raw_stats/${i} ${TARGETDIR}/raw_stats/${i}.csv; done
 
+##SOCKET SCRAPE:
+
 #gather info tables
 for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$info" > ${TARGETDIR}/haproxy_info/${i}_info.out; done
 
 #gather error logs
-for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$error" > ${TARGETDIR}/haproxy_errors/${i}_errors.out; done
+for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$error" > ${TARGETDIR}/haproxy_info/${i}_errors.out; done
+
+#gather pools:
+for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$pool" > ${TARGETDIR}/haproxy_info/${i}_pools.out; done
+
+#gather sessions:
+for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$sessions" > ${TARGETDIR}/haproxy_info/${i}_sessions.out; done
+
+#gather RD output:
+for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$rd" > ${TARGETDIR}/haproxy_info/${i}_rd.out; done
 
 #gather haproxy.config to pair with output:
 oc cp ${default}:haproxy.config -n ${namespace} ${TARGETDIR}/default_haproxy.config
