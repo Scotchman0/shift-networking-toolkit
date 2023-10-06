@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: egress-pod
+  annotations:
+spec:
+  containers:
+  - command: ['bash', '-c', 'while true; do curl -m 5 http://<ip-of-bastion>:8080/test-egress.txt ; sleep 5; done']
+    image: registry.redhat.io/rhel7/rhel-tools
+    imagePullPolicy: IfNotPresent
+    name: test-egress-pod
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+
