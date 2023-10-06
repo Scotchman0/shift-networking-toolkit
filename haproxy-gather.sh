@@ -27,16 +27,13 @@ mkdir $TARGETDIR/haproxy_info
 oc get pods -n ${namespace} -o wide > $TARGETDIR/pod_overview.out
 
 #gather raw stats output for each routerpod:
-for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$cmd" > ${TARGETDIR}/${i}_rawstats; done
+for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$cmd" > ${TARGETDIR}/${i}_rawstats.csv; done
 
 #clean the stats entries for readability:
 for i in $(ls ${TARGETDIR} | grep _rawstats); do column -s, -t < ${TARGETDIR}/${i} | less -#2 -N -S > ${TARGETDIR}/${i}_cleaned.out; done
 
 #move the rawstats to $TARGETDIR/raw_stats
-for i in $(ls ${TARGETDIR} | grep "_rawstats$"); do mv ${TARGETDIR}/${i} ${TARGETDIR}/raw_stats/; done
-
-#rename files in rawstats to .csv for easy-open
-for i in $(ls ${TARGETDIR}/raw_stats/); do mv ${TARGETDIR}/raw_stats/${i} ${TARGETDIR}/raw_stats/${i}.csv; done
+for i in $(ls ${TARGETDIR} | grep "_rawstats.csv$"); do mv ${TARGETDIR}/${i} ${TARGETDIR}/raw_stats/; done
 
 ##SOCKET SCRAPE:
 
@@ -53,7 +50,7 @@ for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'prin
 for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$sessions" > ${TARGETDIR}/haproxy_info/${i}_sessions.out; done
 
 #gather activity output:
-for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$activity" > ${TARGETDIR}/haproxy_activity/${i}_rd.out; done
+for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$activity" > ${TARGETDIR}/haproxy_info/${i}_activity.out; done
 
 #gather haproxy.config to pair with output:
 oc cp ${default}:haproxy.config -n ${namespace} ${TARGETDIR}/default_haproxy.config
