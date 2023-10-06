@@ -9,7 +9,7 @@ info="echo 'show info' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 error="echo 'show errors' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 pools="echo 'show pools' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 sessions="echo 'show sess all' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
-rd="echo 'show rd' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
+activity="echo 'show activity' | socat - UNIX-CONNECT:/var/lib/haproxy/run/haproxy.sock"
 namespace="openshift-ingress" #If running on 3.11='default', 4.x='openshift-ingress'
 selector="default" #If running on 3.11='router' #4.x='default' #defines which pod has the default haproxy.config file
 
@@ -52,8 +52,8 @@ for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'prin
 #gather sessions:
 for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$sessions" > ${TARGETDIR}/haproxy_info/${i}_sessions.out; done
 
-#gather RD output:
-for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$rd" > ${TARGETDIR}/haproxy_info/${i}_rd.out; done
+#gather activity output:
+for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$activity" > ${TARGETDIR}/haproxy_activity/${i}_rd.out; done
 
 #gather haproxy.config to pair with output:
 oc cp ${default}:haproxy.config -n ${namespace} ${TARGETDIR}/default_haproxy.config
