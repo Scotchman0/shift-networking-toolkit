@@ -1,0 +1,12 @@
+#test pod yaml; deploys the iputils-container dockerfile
+apiVersion: v1
+kind: Pod
+metadata:
+  name: iputils-container
+  namespace: <target-namespace>
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: <target-node-fqdn>
+  containers:
+    - name: iputils-container
+      image: 'quay.io/rhn_support_wrussell/iputils-container:latest'
