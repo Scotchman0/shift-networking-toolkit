@@ -37,6 +37,8 @@ ETHSRC=$(oc rsh ${OVNMASTER} ovn-nbctl --no-leader show | grep -i ${SOURCEPOD} -
 IPV4SRC=$(oc get pod/${SOURCEPOD} -n ${SOURCENS} -o yaml | grep ip: | awk {'print $3'})
 #Source pod HOST node:
 SPHOST=$(oc get pod/${SOURCEPOD} -n ${SOURCENS} -o wide | awk {'print $7'} | grep -v NODE)
+#Source pod HOST node IP:
+SPHOSTIP=$(oc get nodes -o wide | grep ${SPHOST} | awk {'print $6'})
 
 #source pod host node MAC
 ETHDST=$(oc rsh ${OVNMASTER} ovn-nbctl --no-leader show | grep -i "port rtos-${SPHOST}" -A3 | grep mac: | awk {'print $2'} | tr -d '"' | sed 's/^M//g')
@@ -85,7 +87,7 @@ SOURCEPOD=\"${SOURCEPOD}\"
 
 ##TRACE COMMAND COMPILED:
 #echo the command out first for logging:
-echo "oc -n openshift-ovn-kubernetes rsh -c ovnkube-master ${OVNMASTER} ovn-trace -p /ovn-cert/tls.key -c /ovn-cert/tls.crt -C /ovn-ca/ca-bundle.crt --db ssl:${MASTER1_IP}:9642,ssl:${MASTER2_IP}:9642,ssl:${MASTER3_IP}:9642 ${SPHOST} 'inport == ${SOURCEPOD} && eth.src == ${ETHSRC} && eth.dst == ${ETHDST} && ip4.src == ${IPV4SRC} && ip.dst == ${DEFAULTSERVICEIP} && ip.ttl == 64 && icmp4.type == 8'" | tee test.out
+echo "oc -n openshift-ovn-kubernetes rsh -c ovnkube-master ${OVNMASTER} ovn-trace -p /ovn-cert/tls.key -c /ovn-cert/tls.crt -C /ovn-ca/ca-bundle.crt --db ssl:${MASTER1_IP}:9642,ssl:${MASTER2_IP}:9642,ssl:${MASTER3_IP}:9642 ${SPHOST} 'inport == ${SOURCEPOD} && eth.src == ${ETHSRC} && eth.dst == ${ETHDST} && ip4.src == ${IPV4SRC} && ip4.dst == ${SPHOSTIP} && ip.ttl == 64 && icmp4.type == 8'" | tee test.out
 
 #execute it:
-oc -n openshift-ovn-kubernetes rsh -c ovnkube-master ${OVNMASTER} ovn-trace -p /ovn-cert/tls.key -c /ovn-cert/tls.crt -C /ovn-ca/ca-bundle.crt --db ssl:${MASTER1_IP}:9642,ssl:${MASTER2_IP}:9642,ssl:${MASTER3_IP}:9642 ${SPHOST} 'inport == ${SOURCEPOD} && eth.src == ${ETHSRC} && eth.dst == ${ETHDST} && ip4.src == ${IPV4SRC} && ip4.dst == ${DEFAULTSERVICEIP} && ip.ttl == 64 && icmp4.type == 8' | tee trace-${SOURCEPOD}-${DATE}.out
+oc -n openshift-ovn-kubernetes rsh -c ovnkube-master ${OVNMASTER} ovn-trace -p /ovn-cert/tls.key -c /ovn-cert/tls.crt -C /ovn-ca/ca-bundle.crt --db ssl:${MASTER1_IP}:9642,ssl:${MASTER2_IP}:9642,ssl:${MASTER3_IP}:9642 ${SPHOST} 'inport == ${SOURCEPOD} && eth.src == ${ETHSRC} && eth.dst == ${ETHDST} && ip4.src == ${IPV4SRC} && ip4.dst == ${SPHOSTIP} && ip.ttl == 64 && icmp4.type == 8' | tee trace-${SOURCEPOD}-${DATE}.out
