@@ -17,7 +17,7 @@ nc_loop() {
    # Print the output
    echo "$OUTPUT --> $DATE"
    
-   # Check if the output contains "Connection refused"
+   # Check if the output is anything other than 'Connected to'
    if [[ $OUTPUT != *"Connected to"* ]]; then
      echo "Connection error: $OUTPUT"
      break
