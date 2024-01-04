@@ -1,5 +1,7 @@
 #!/bin/bash
+# Will Russell 1/4/24
 # A basic script to loop a netcat against a target ip and port, log output and stop the loop once we encounter an unexpected result
+# Usage: nc_socket_probe_until_error.sh <IP> <PORT>
 
 IP="$1"
 PORT="$2"
