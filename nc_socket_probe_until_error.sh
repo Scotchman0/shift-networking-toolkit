@@ -8,7 +8,7 @@ LOGPATH=${DATE}_nc_results.out
 
 nc_loop() {
  while true; do
-   DATE=$(date +"%Y-%m-%d-%H-%M")
+   DATE=$(date +"%Y-%m-%d-%H-%M-%S")
    # Run netcat and capture its output
    OUTPUT=$(nc -v -z -i 1 $IP $PORT 2>&1)
 
