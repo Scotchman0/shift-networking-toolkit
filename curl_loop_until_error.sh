@@ -1,6 +1,7 @@
 #!/bin/bash
 #Will Russell 9/22/23
 #a basic script to loop a curl against a target url, log output and stop the loop once we encounter an unexpected result (e.g. fail if http_response != 200)
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY
 #usage: $ curl_loop_until_error.sh <url> (can also just update the script manually below)
 
 
