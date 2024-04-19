@@ -4,7 +4,7 @@
 #usage: curl_loop_until_error <http_code> <url> (can also just update the script manually below)
 
 
-export SSLKEYLOGFILE=/tmp/sslkeylog.txt #so that we get the keys to decipher client traffic. Path can be changed.
+export SSLKEYLOGFILE=./sslkeylog.txt #so that we get the keys to decipher client traffic. Path can be changed.
 URL="$1"
 CODE=200
 DATE=$(date +"%Y-%m-%d-%H-%M")
