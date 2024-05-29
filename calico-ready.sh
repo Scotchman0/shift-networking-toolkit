@@ -6,6 +6,7 @@
 
 #define NLB IP address for nftable ruleset
 SOURCE=192.168.128.100 #here exampled dummy LB address
+counter=0 #initial count marker value
 
 #check if nftable rule exists and if not, deny traffic:
 block_traffic () {
@@ -49,9 +50,10 @@ allow_traffic_test () {
 
 
 testloop () {
+
 pod1="router-default"
-pod2="calico-node" 
-route_output=$(ip route show 172.30.0.0/16 2>/dev/null)
+pod2="ovnkube-node" #change to calico-node
+route_output=$(ip route show 172.20.0.0/16 2>/dev/null) #change to 172.30
 
 if crictl pods | grep ${pod1} | grep -q "Ready"; 
 then
@@ -61,7 +63,7 @@ then
 
 			echo "route not ready, retrying"
 			block_traffic_test
-			retry
+			#retry
 		else
 			echo "system ready"
 			allow_traffic_test
@@ -69,12 +71,12 @@ then
 	else
 		echo "calico-node not ready, retrying"
 		block_traffic_test
-		retry
+		#retry
 	fi
 else
 	echo "router-default not ready, retrying"
     block_traffic_test
-	retry
+	#retry
 fi
 }
 
@@ -82,23 +84,18 @@ fi
 #define logic for how long to sleep between health-validations, and how many times to try again before default exiting the script.
 #This may need to be set to some not insignificant period of time, like 120 or 240 calls.
 
-
-##!! THIS NEEDS TO BE FIXED - COUNTER DOES NOT INCREASE
-retry (){
-counter=0
-sleep 1
-#arbitrary timeframe of 30s
-	while (( counter < 30 )); do
-    ((counter++))
-    echo "$counter"
-    case $counter in
-        1)
-            testloop ;;
-        30)
-            fail ;;
-    esac
+retry () {
+#define how long to loop
+while [ $counter -lt 30 ]; do
+    testloop
+    sleep 1 #how long to wait between checks
+    counter=$((counter + 1))
+    echo $counter
 done
+
+fail
 }
+
 
 fail (){
 	echo "unable to complete check within defined timelimit, exiting cleanly anyway to avoid break/stop event"
@@ -106,6 +103,6 @@ fail (){
 }
 
 #call initial script loop
-testloop
+retry
 echo "NODE IS READY"
 exit 0
