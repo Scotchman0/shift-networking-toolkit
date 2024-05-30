@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary-pod-custom
+  namespace: openshift-ingress
+spec:
+  minReadySeconds: 30
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+    spec:
+      containers:
+        image: "????"
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            host: localhost
+            path: /healthz
+            port: 1937
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: router
+        ports:
+        - containerPort: 81
+          hostPort: 81
+          name: http
+          protocol: TCP
+        - containerPort: 444
+          hostPort: 444
+          name: https
+          protocol: TCP
+        - containerPort: 1937
+          hostPort: 1937
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            host: localhost
+            path: /healthz/ready
+            port: 1937
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+        startupProbe:
+          failureThreshold: 120
+          httpGet:
+            host: localhost
+            path: /healthz/ready
+            port: 1937
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: FallbackToLogsOnError
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+        node-role.kubernetes.io/worker: ""
+      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 3600
