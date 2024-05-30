@@ -1,0 +1,50 @@
+#!/bin/bash
+# A brief Pcap reader tool for fast summary output before deep dive.
+# this doesn't do anything you couldn't run manually, but it's handy for me so I can just get a brief snapshot of what I'm looking at before digging in.
+
+
+#resources:
+#tcpdump: 
+# $ tcpdump -s 0 -n -i ethX -w /tmp/$(hostname)-$(date +"%Y-%m-%d-%H-%M-%S").pcap 
+
+# how to capture packets from inside OCP3.11 pod:
+# https://access.redhat.com/solutions/3480421
+
+# how to capture packets from inside OCP4 pod:
+# https://access.redhat.com/solutions/4569211
+
+#TCPDUMP packet capture syntax generator:
+# https://access.redhat.com/labs/nptcpdump/
+
+
+
+echo "tcpdump quick-analyis overview script"
+echo "This script is designed to run on any and all *.pcap files in the current working directory"
+echo "press return to start analysis"
+read hold_pattern
+
+echo "endpoints and packet loss overview:"
+echo "for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -qz endpoints,ip; done"
+for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -qz endpoints,ip; done
+
+echo ""
+echo "unique endpoints by pcap:"
+echo "for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -qz endpoints,ip; done | awk '/^1/{print $1}' | sort | uniq -c | sort -rn | head"
+for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -qz endpoints,ip | awk '/^1/{print $1}' | sort | uniq -c | sort -rn | head; done
+
+echo ""
+echo "zero-window and non-standard TCP replies (DUPs):"
+echo "./non-standard-replies.txt generated to prevent buffer overflow on large pcaps"
+echo 'for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -Y "tcp.analysis.zero_window" | wc -l ; done'
+for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -Y "tcp.analysis.zero_window" | wc -l ; done
+
+echo ""
+echo 'for pcap in ./*.pcap* ; do echo $pcap >> ./non-standard-replies.txt ; tshark -r $pcap -Y "tcp.analysis && not (tcp.analysis.acks_frame || tcp.analysis.push_bytes_sent)" >> ./non-standard-replies.txt ; echo "" >> ./non-standard-replies.txt ; done'
+for pcap in ./*.pcap* ; do echo $pcap >> ./non-standard-replies.txt ; tshark -r $pcap -Y "tcp.analysis && not (tcp.analysis.acks_frame || tcp.analysis.push_bytes_sent)" >> ./non-standard-replies.txt ; echo "" >> ./non-standard-replies.txt ; done
+echo ""
+
+echo "TCP resets observed:"
+echo "for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -Y 'tcp.flags.reset==1' | wc -l ; done"
+for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -Y "tcp.flags.reset==1" | wc -l ; done
+
+echo "script completed"
