@@ -43,12 +43,14 @@ rules=$(nft list ruleset)
 if [[ ! $rules =~ "ip saddr ${SOURCE} tcp dport 443 drop" ]]; then
     # Rule not found, nothing to do
     echo "Rule not applied, nothing to remove"
+    success
 else
     echo "Rule exists, removing"
     #get the handle number for the rule:
     handle=$(nft -a list chain ip nat PREROUTING | grep -w ${SOURCE} | awk {'print $10'})
     #remove the rule using the handle
     nft -a delete rule ip nat PREROUTING handle ${handle}
+    success
 fi
 }
 
@@ -58,6 +60,7 @@ block_traffic_test () {
 
 allow_traffic_test () {
 	echo "here we would have allowed traffic again"
+	success
 }
 
 
@@ -68,10 +71,10 @@ testloop () {
 pod1="router-default"
 pod2="calico-node"
 route_output=$(ip route show 172.30.0.0/16 2>/dev/null)
-#is router-default up?
-if crictl pods | grep ${pod1} | grep -q "Ready"; 
-then #is calico-node up?
-	if crictl pods | grep ${pod2} | grep -q "Ready"
+#is router-default up? (-q quiet -w exact match to ignore "notReady")
+if crictl pods | grep ${pod1} | grep -qw "Ready"; 
+then #is calico-node up? (-q quiet -w exact match to ignore "notReady")
+	if crictl pods | grep ${pod2} | grep -qw "Ready"
 	then #is the route defined?
 		if [[ -z "$route_output" ]]; then
 			echo "route not ready, retrying"
@@ -107,11 +110,14 @@ timeout (){
 #a safety valve to ensure that no matter what, we exit the script cleanly to avoid a start failure condition on other services, and the nft rule is removed at the end
 	echo "unable to complete check within defined timelimit, exiting cleanly anyway to avoid break/stop event"
 	allow_traffic_test #change to allow_traffic for live #guarantee we removed the NFT rule.
-	exit 0
+}
+
+success (){
+#success condition should be called when we confirm all 3 conditions are met after allowing traffic again - called by allow_traffic and allow_traffic_test to escape
+echo "NODE IS READY"
+exit 0
 }
 
 #######SCRIPT START LOGIC:#######
 #call initial script loop
 retry
-echo "NODE IS READY"
-exit 0
