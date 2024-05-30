@@ -3,6 +3,8 @@
 #Will Russell (SunBro)
 #10.06.23
 #For use in Red Hat troubleshooting diagnostics sessions; provided with AS-IS with no warranty, guarantees or support expectations
+##CURRENTLY IN PROGRESS - NOT FULLY WORKING
+
 
 #SET GLOBAL VARIABLES:
 
