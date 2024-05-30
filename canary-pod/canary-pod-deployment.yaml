@@ -22,29 +22,21 @@ spec:
       containers:
         image: "????"
         imagePullPolicy: IfNotPresent
-        livenessProbe:
+        livenessProbe: ###ALL THE LIVENESS/READY PROBES NEED TO BE RE-WORKED: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
           failureThreshold: 3
           httpGet:
             host: localhost
             path: /healthz
-            port: 1937
+            port: 8888
             scheme: HTTP
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
-        name: router
+        name: canary-pod
         ports:
-        - containerPort: 81
-          hostPort: 81
+        - containerPort: 8888
+          hostPort: 8888
           name: http
-          protocol: TCP
-        - containerPort: 444
-          hostPort: 444
-          name: https
-          protocol: TCP
-        - containerPort: 1937
-          hostPort: 1937
-          name: metrics
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
