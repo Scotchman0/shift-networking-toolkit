@@ -46,7 +46,7 @@ if [[ ! $rules =~ "ip saddr ${SOURCE} tcp dport 443 drop" ]]; then
 else
     echo "Rule exists, removing"
     #get the handle number for the rule:
-    handle=$(nft -a list chain ip nat PREROUTING | grep 192.168.128.100 | awk {'print $10'})
+    handle=$(nft -a list chain ip nat PREROUTING | grep -w ${SOURCE} | awk {'print $10'})
     #remove the rule using the handle
     nft -a delete rule ip nat PREROUTING handle ${handle}
 fi
