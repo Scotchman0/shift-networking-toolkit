@@ -25,7 +25,7 @@ CODE=200
 LOCALPORT=$(echo "${NGINX_PORT}") 
 #url to check:
 #TODO: change URL to dynamic detect on /etc/resolv.conf output injected domain for canary-openshift-ingress-canary.apps.*${domain}
-#URL=canary-openshift-ingress-canary.apps.shrocp4upi412ovn.lab.upshift.rdu2.redhat.com
+URL=canary-openshift-ingress-canary.apps.shrocp4upi412ovn.lab.upshift.rdu2.redhat.com
 #TEST_ROUTE is defined in canary-pod-deployment.yaml as an env var
 
 ##---- SET FUNCTIONS ----##
@@ -40,7 +40,7 @@ healthprobe (){
     #subsequent calls (post nginx start/curl-loop success, which is used to confirm continued health of routes/set pod ready status)
 while true; do    
     #define curl details - call router-pod
-    response=$(curl -kw --resolve "${TEST_ROUTE}":443:127.0.0.1 https://"${URL}")
+    response=$(curl -kw --resolve "${URL}":443:127.0.0.1 https://"${URL}")
     #define curl details - call self
     response2=$(curl -kw http://127.0.0.1:${LOCALPORT})
 
@@ -50,8 +50,8 @@ while true; do
 
 #set conditional reply to exit the loop only when the reply is a 200
     if [ "$http_code" = "${CODE}" && "$http_code" = "${CODE}" ] ; then
-        echo "successful reply returned from router pod: $response"
-        echo "successful reply returned from self: $response2"
+        echo "HEALTHPROBE: successful reply returned from router pod: $response"
+        echo "HEALTHPROBE: successful reply returned from self: $response2"
         touch /tmp/healthy
         sleep 5
     else
@@ -80,12 +80,12 @@ while true; do
 
 #set conditional reply to exit the loop only when the reply is a 200
     if [ "$http_code" = "${CODE}" ] ; then
-    	echo "successful reply returned: $response"
+    	echo "INIT PROBE: successful reply returned: $response"
     	break
         touch /tmp/healthy
         expose_healthpath #start nginx and then start health-checking in the container for follow up health checks.
     else
-        echo "node not ready, waiting for routing to be established..."
+        echo "INITPROBE: node not ready, waiting for routing to be established..."
         sleep 5
     fi
 done

@@ -61,7 +61,7 @@ spec:
             cpu: 100m
             memory: 256Mi
         securityContext:
-          allowPrivilegeEscalation: false
+          allowPrivilegeEscalation: true
         startupProbe:
           failureThreshold: 120
           exec:
@@ -84,3 +84,5 @@ spec:
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 3600
+      serviceAccount: router
+      serviceAccountName: router
