@@ -70,6 +70,7 @@ done
 expose_healthpath () {
 #this function starts nginx which makes our target URI accessible once the script gets the desired result back.
     exec nginx -g "daemon off;"
+    sleep 5 #allow time for nginx to start
     healthprobe #call ongoing self-check loop to ensure routes stay up
 }
 
@@ -79,6 +80,9 @@ while sleep 2; do
     #define curl details
     response=$(curl -kw "${OPTIONS}" --resolve "${URL}":443:127.0.0.1 https://"${URL}"; sleep .2 )
 
+    #DEBUG:
+    echo "${URL}"
+    
     #DEBUG: 
     echo 'curl -kw "${OPTIONS}" --resolve "${URL}":443:127.0.0.1 https://"${URL}"'
 
@@ -93,7 +97,7 @@ while sleep 2; do
 
 #set conditional reply to exit the loop only when the reply is a 200
     if [ "$http_code" = "${CODE}" ] ; then
-    	echo "INIT PROBE: successful reply returned: $response"
+    	echo "INITPROBE: successful reply returned: $response"
     	break
         touch /tmp/healthy
         expose_healthpath #start nginx and then start health-checking in the container for follow up health checks.
