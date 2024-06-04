@@ -14,8 +14,16 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Make the script executable
 RUN chmod +x /canary-pod.sh
 
+# Change the owner of /run to nginx
+RUN chown -R nginx:nginx /run
+
+#create nginx.pid
+RUN touch /run/nginx.pid && chmod 777 /run/nginx.pid
+
 #suggest exposed container port - nginx currently listening on this port
 EXPOSE 8888
+
+USER nginx
 
 # Set the entrypoint
 ENTRYPOINT ["/canary-pod.sh"]

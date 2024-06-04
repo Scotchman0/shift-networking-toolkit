@@ -53,7 +53,7 @@ while sleep 2; do
     http_code2=$(echo "${response}" | awk '/HTTP Code:/ {print $3}')
 
 #set conditional reply to exit the loop only when the reply is a 200
-    if [ "$http_code" = "${CODE}" && "$http_code2" = "${CODE}" ] ; then
+    if [[ "$http_code" = "${CODE}" && "$http_code2" = "${CODE}" ]] ; then
         echo "HEALTHPROBE: successful reply returned from router pod: $response"
         echo "HEALTHPROBE: successful reply returned from self: $response2"
         touch /tmp/healthy
@@ -69,7 +69,7 @@ done
 
 expose_healthpath () {
 #this function starts nginx which makes our target URI accessible once the script gets the desired result back.
-    exec nginx -g "daemon off;"
+    exec nginx -g "daemon off;" &
     sleep 5 #allow time for nginx to start
     healthprobe #call ongoing self-check loop to ensure routes stay up
 }
