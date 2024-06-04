@@ -21,8 +21,10 @@ spec:
     spec:
       containers:
         env:
-        - name: DEMO_GREETING
-          value: "Hello from the environment"
+        - name: NGXINX_PORT
+          value: "8888"
+        - name: TESTURL
+          value: "test.mydomain.com"
         image: "????"
         imagePullPolicy: IfNotPresent
         livenessProbe: #set to check a file exists

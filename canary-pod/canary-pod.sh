@@ -22,7 +22,7 @@
 #expected response:
 CODE=200
 #port exposed on nginx container
-LOCALPORT=8888 
+LOCALPORT=$(echo "${NGINX_PORT}") 
 #url to check:
 #TODO: change URL to dynamic detect on /etc/resolv.conf output injected domain for canary-openshift-ingress-canary.apps.*${domain}
 URL=canary-openshift-ingress-canary.apps.shrocp4upi412ovn.lab.upshift.rdu2.redhat.com
