@@ -1,3 +1,6 @@
+#Container to deploy custom canary-pod to alert that router configuration and calico-node is online
+#Written by Will Russell for use in testing/workaround for Calico-node late start problem on infra hosts
+
 FROM ubi8:latest
 
 # Install curl and nginx
@@ -9,6 +12,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Make the script executable
 RUN chmod +x /canary-pod.sh
+
+#suggest exposed container port - nginx currently listening on this port
+EXPOSE 8888
 
 # Set the entrypoint
 ENTRYPOINT ["/canary-pod.sh"]

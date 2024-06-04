@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: canary-pod-custom
+  name: canary-pod
   namespace: openshift-ingress
 spec:
   minReadySeconds: 30
@@ -20,15 +20,16 @@ spec:
     metadata:
     spec:
       containers:
+        env:
+        - name: DEMO_GREETING
+          value: "Hello from the environment"
         image: "????"
         imagePullPolicy: IfNotPresent
-        livenessProbe: ###ALL THE LIVENESS/READY PROBES NEED TO BE RE-WORKED: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-          failureThreshold: 3
-          httpGet:
-            host: localhost
-            path: /healthz
-            port: 8888
-            scheme: HTTP
+        livenessProbe: #set to check a file exists
+          exec:
+            command:
+            - cat
+            - /tmp/healthy
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
@@ -40,12 +41,14 @@ spec:
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
-          httpGet:
-            host: localhost
-            path: /healthz/ready
-            port: 1937
-            scheme: HTTP
-          initialDelaySeconds: 30
+          exec:
+            command:
+            - cat
+            - /tmp/healthy
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+          initialDelaySeconds: 10
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
@@ -57,12 +60,11 @@ spec:
           allowPrivilegeEscalation: false
         startupProbe:
           failureThreshold: 120
-          httpGet:
-            host: localhost
-            path: /healthz/ready
-            port: 1937
-            scheme: HTTP
-          initialDelaySeconds: 30
+          exec:
+            command:
+            - cat
+            - /tmp/healthy
+          initialDelaySeconds: 10
           periodSeconds: 1
           successThreshold: 1
           timeoutSeconds: 1
