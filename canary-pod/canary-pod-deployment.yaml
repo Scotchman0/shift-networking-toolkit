@@ -25,7 +25,7 @@ spec:
           value: "8888"
         - name: TESTURL
           value: "test.mydomain.com"
-        image: "????"
+        image: "quay.io/rhn_support_wrussell/canary-pod:latest"
         imagePullPolicy: IfNotPresent
         livenessProbe: #set to check a file exists
           exec:
