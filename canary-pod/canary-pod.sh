@@ -44,7 +44,7 @@ healthprobe (){
     #subsequent calls (post nginx start/curl-loop success, which is used to confirm continued health of routes/set pod ready status)
 while sleep 2; do    
     #define curl details - call router-pod
-    response=$(curl -kw "${OPTIONS}" --resolve "${URL}":443:127.0.0.1 https://"${URL}"; sleep .2 )
+    response=$(curl -kw "$OPTIONS" --resolve ${URL}:443:localhost https://${URL}; sleep .2 )
     #define curl details - call self
     response2=$(curl -kw "${OPTIONS}" http://127.0.0.1:${LOCALPORT})
 
@@ -78,13 +78,7 @@ curl_loop() {
 #curl indefinitely until you get a 200 response from this route, at which point run the expose_healthpath function to modify + start nginx
 while sleep 2; do    
     #define curl details
-    response=$(curl -kw "${OPTIONS}" --resolve "${URL}":443:127.0.0.1 https://"${URL}"; sleep .2 )
-
-    #DEBUG:
-    echo "${URL}"
-    
-    #DEBUG: 
-    echo 'curl -kw "${OPTIONS}" --resolve "${URL}":443:127.0.0.1 https://"${URL}"'
+    response=$(curl -kw "$OPTIONS" --resolve ${URL}:443:localhost https://${URL}; sleep .2 )
 
     #DEBUG:
     echo $response
