@@ -10,7 +10,7 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+      app: canary-pod
   strategy:
     rollingUpdate:
       maxSurge: 0
@@ -18,13 +18,15 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      labels:
+        app: canary-pod
     spec:
       containers:
-        env:
+      - env:
         - name: NGXINX_PORT
           value: "8888"
-        - name: TESTURL
-          value: "test.mydomain.com"
+        - name: TEST_ROUTE
+          value: "canary-openshift-ingress-canary.apps.shrocp4upi413ovn.lab.psi.pnq2.redhat.com"
         image: "quay.io/rhn_support_wrussell/canary-pod:latest"
         imagePullPolicy: IfNotPresent
         livenessProbe: #set to check a file exists
