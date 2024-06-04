@@ -80,8 +80,6 @@ while sleep 2; do
     #define curl details
     response=$(curl -kw "$OPTIONS" --resolve ${URL}:443:localhost https://${URL}; sleep .2 )
 
-    #DEBUG:
-    echo $response
 
 #get the result of said curl:
     http_code=$(echo "${response}" | awk '/HTTP Code:/ {print $3}')
@@ -92,9 +90,9 @@ while sleep 2; do
 #set conditional reply to exit the loop only when the reply is a 200
     if [ "$http_code" = "${CODE}" ] ; then
     	echo "INITPROBE: successful reply returned: $response"
-    	break
         touch /tmp/healthy
         expose_healthpath #start nginx and then start health-checking in the container for follow up health checks.
+        break
     else
         echo "INITPROBE: node not ready, waiting for routing to be established..."
         sleep 5
