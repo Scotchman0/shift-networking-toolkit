@@ -28,7 +28,7 @@ spec:
         - name: TEST_ROUTE
           value: "canary-openshift-ingress-canary.apps.shrocp4upi413ovn.lab.psi.pnq2.redhat.com"
         image: "quay.io/rhn_support_wrussell/canary-pod:latest"
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         livenessProbe: #set to check a file exists
           exec:
             command:
@@ -83,6 +83,6 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
-      terminationGracePeriodSeconds: 3600
+      terminationGracePeriodSeconds: 60
       serviceAccount: router
       serviceAccountName: router

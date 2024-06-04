@@ -22,11 +22,15 @@
 #expected response:
 CODE=200
 #port exposed on nginx container
-LOCALPORT=$(echo "${NGINX_PORT}") 
+LOCALPORT=8888
 #url to check:
 #TODO: change URL to dynamic detect on /etc/resolv.conf output injected domain for canary-openshift-ingress-canary.apps.*${domain}
 URL=canary-openshift-ingress-canary.apps.shrocp4upi412ovn.lab.upshift.rdu2.redhat.com
 #TEST_ROUTE is defined in canary-pod-deployment.yaml as an env var
+
+#OPTIONS is necessary to pull the response_code value for the script
+OPTIONS='\n\nLocal port: %{local_port}\nHTTP Code: %{http_code}\nTime appconnect: %{time_appconnect}\nTime connect: %{time_connect}\nTime namelookup: %{time_namelookup}\nTime pretransfer: %{time_pretransfer}\nTime redirect: %{time_redirect}\nTime starttransfer: %{time_starttransfer}\nTime total: %{time_total}\n'
+
 
 ##---- SET FUNCTIONS ----##
 
@@ -38,24 +42,24 @@ fail_state (){
 
 healthprobe (){
     #subsequent calls (post nginx start/curl-loop success, which is used to confirm continued health of routes/set pod ready status)
-while true; do    
+while sleep 2; do    
     #define curl details - call router-pod
-    response=$(curl -kw --resolve "${URL}":443:127.0.0.1 https://"${URL}")
+    response=$(curl -kw "${OPTIONS}" --resolve "${URL}":443:127.0.0.1 https://"${URL}"; sleep .2 )
     #define curl details - call self
-    response2=$(curl -kw http://127.0.0.1:${LOCALPORT})
+    response2=$(curl -kw "${OPTIONS}" http://127.0.0.1:${LOCALPORT})
 
 #get the result of said curls:
-    http_code=$(echo "$response" | awk '/HTTP Code:/ {print $3}')
-    http_code2=$(echo "$response" | awk '/HTTP Code:/ {print $3}')
+    http_code=$(echo "${response}" | awk '/HTTP Code:/ {print $3}')
+    http_code2=$(echo "${response}" | awk '/HTTP Code:/ {print $3}')
 
 #set conditional reply to exit the loop only when the reply is a 200
-    if [ "$http_code" = "${CODE}" && "$http_code" = "${CODE}" ] ; then
+    if [ "$http_code" = "${CODE}" && "$http_code2" = "${CODE}" ] ; then
         echo "HEALTHPROBE: successful reply returned from router pod: $response"
         echo "HEALTHPROBE: successful reply returned from self: $response2"
         touch /tmp/healthy
         sleep 5
     else
-        echo "node not ready, waiting for routing to be established..."
+        echo "HEALTHPROBE: node not ready, waiting for routing to be established..."
         break
         fail_state #call fail_state function to exit nginx
         sleep 5
@@ -71,12 +75,21 @@ expose_healthpath () {
 
 curl_loop() {
 #curl indefinitely until you get a 200 response from this route, at which point run the expose_healthpath function to modify + start nginx
-while true; do    
+while sleep 2; do    
     #define curl details
-    response=$(curl -kw --resolve "${URL}":443:127.0.0.1 https://"${URL}")
+    response=$(curl -kw "${OPTIONS}" --resolve "${URL}":443:127.0.0.1 https://"${URL}"; sleep .2 )
+
+    #DEBUG: 
+    echo 'curl -kw "${OPTIONS}" --resolve "${URL}":443:127.0.0.1 https://"${URL}"'
+
+    #DEBUG:
+    echo $response
 
 #get the result of said curl:
-    http_code=$(echo "$response" | awk '/HTTP Code:/ {print $3}')
+    http_code=$(echo "${response}" | awk '/HTTP Code:/ {print $3}')
+
+    #DEBUG:
+    echo $http_code
 
 #set conditional reply to exit the loop only when the reply is a 200
     if [ "$http_code" = "${CODE}" ] ; then
