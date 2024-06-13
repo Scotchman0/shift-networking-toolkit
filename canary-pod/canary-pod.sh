@@ -48,17 +48,18 @@ healthprobe (){
 while sleep 2; do    
     #define curl details - call router-pod
     response=$(curl -kw "$OPTIONS" --resolve ${URL}:443:localhost https://${URL}; sleep .2 )
-    #define curl details - call self
-    response2=$(curl -kw "${OPTIONS}" http://127.0.0.1:${LOCALPORT})
+    #define curl details - call self at healthz/ready entrypoint
+    response2=$(curl -kw "${OPTIONS}" http://127.0.0.1:${LOCALPORT}/healthz/ready)
 
 #get the result of said curls:
     http_code=$(echo "${response}" | awk '/HTTP Code:/ {print $3}')
-    http_code2=$(echo "${response}" | awk '/HTTP Code:/ {print $3}')
+    http_code2=$(echo "${response2}" | awk '/HTTP Code:/ {print $3}')
 
 #set conditional reply to exit the loop only when the reply is a 200
     if [[ "$http_code" = "${CODE}" && "$http_code2" = "${CODE}" ]] ; then
-        echo "HEALTHPROBE: successful reply returned from router pod: $response"
-        echo "HEALTHPROBE: successful reply returned from self: $response2"
+        #previously called $response values, calling instead http_code values to reduce loglevel noise
+        echo "HEALTHPROBE: successful reply returned from router pod: $http_code"
+        echo "HEALTHPROBE: successful reply returned from self: $http_code2"
         touch /tmp/healthy
         sleep 5
     else
