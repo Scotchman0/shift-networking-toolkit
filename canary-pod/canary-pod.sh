@@ -29,7 +29,7 @@ URL=canary-openshift-ingress-canary.apps.shrocp4upi412ovn.lab.upshift.rdu2.redha
 #TEST_ROUTE is defined in canary-pod-deployment.yaml as an env var
 
 #OPTIONS is necessary to pull the response_code value for the script
-OPTIONS='\n\nLocal port: %{local_port}\nHTTP Code: %{http_code}\nTime appconnect: %{time_appconnect}\nTime connect: %{time_connect}\nTime namelookup: %{time_namelookup}\nTime pretransfer: %{time_pretransfer}\nTime redirect: %{time_redirect}\nTime starttransfer: %{time_starttransfer}\nTime total: %{time_total}\n'
+OPTIONS='HTTP Code: %{http_code}\n'
 
 
 ##---- SET FUNCTIONS ----##
@@ -37,6 +37,9 @@ OPTIONS='\n\nLocal port: %{local_port}\nHTTP Code: %{http_code}\nTime appconnect
 fail_state (){
     #call this function if error condition is presented to signal kubelet the container is NotReady and should be restarted
     rm /tmp/healthy
+    sleep 5 #delay timer for ready probe fail externally for events
+    #restart curl_loop init probes to self-recover if possible
+    curl_loop 
 }
 
 
@@ -60,9 +63,9 @@ while sleep 2; do
         sleep 5
     else
         echo "HEALTHPROBE: node not ready, waiting for routing to be established..."
-        break
         fail_state #call fail_state function to exit nginx
         sleep 5
+        break
     fi
 done
 }
