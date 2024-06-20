@@ -1,0 +1,35 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: passthrough-test
+spec:
+  replicas: 1
+  selector:
+    app: passthrough-test
+  template:
+    metadata:
+      labels:
+        app: passthrough-test
+    spec:
+      containers:
+      - name: passthrough-test
+        image: quay.io/rhn_support_wrussell/passthrough-test:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: ssl
+          mountPath: /etc/pki/tls/certs
+          readOnly: true
+      volumes:
+      - name: ssl
+        secret:
+          secretName: my-wildcard-certificate
+  strategy:
+    type: Rolling
+        volumeMounts:
+        - name: ssl
+          mountPath: /etc/pki/tls/certs
+          readOnly: true
+      volumes:
+      - name: ssl
+        secret:
