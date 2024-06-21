@@ -5,14 +5,14 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 WORKDIR /app
 
 # Copy package.json and package-lock.json (if available)
-COPY package*.json./
+#COPY package*.json./
 
 # Install dependencies
 RUN microdnf install -y nodejs npm && \
     microdnf clean all
 
 # Copy the rest of the application code
-COPY..
+#COPY
 
 # Expose port 80
 EXPOSE 80
