@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    run: conntrack-exporter
+    app: conntrack-exporter
+  name: conntrack-exporter-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: conntrack-exporter
+      app: conntrack-exporter
+  template:
+    metadata:
+      labels:
+        run: conntrack-exporter
+        app: conntrack-exporter
+    spec:
+      containers:
+      - image: quay.io/rhn_support_wrussell/conntrack_exporter:latest
+        name: conntrack-exporter
+        resources: {}
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      restartPolicy: Never
+      #nodeSelector: #you may need to scope this to specific infra hosts that are running router pods
+      tolerations:
+      - operator: Exists

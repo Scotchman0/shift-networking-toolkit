@@ -25,6 +25,7 @@ CODE=200
 LOCALPORT=8888
 #url to check:
 #TODO: change URL to dynamic detect on /etc/resolv.conf output injected domain for canary-openshift-ingress-canary.apps.*${domain}
+#CHANGE THIS URL TO MATCH YOUR CLUSTER'S CANARY ROUTE: `oc get route -n openshift-ingress-canary`
 URL=canary-openshift-ingress-canary.apps.shrocp4upi412ovn.lab.upshift.rdu2.redhat.com
 #TEST_ROUTE is defined in canary-pod-deployment.yaml as an env var
 
@@ -37,6 +38,8 @@ OPTIONS='HTTP Code: %{http_code}\n'
 fail_state (){
     #call this function if error condition is presented to signal kubelet the container is NotReady and should be restarted
     rm /tmp/healthy
+    #stop nginx to mark the host as unavailable for the NLB (stop publishing the URI)
+    nginx -s stop
     sleep 5 #delay timer for ready probe fail externally for events
     #restart curl_loop init probes to self-recover if possible
     curl_loop 

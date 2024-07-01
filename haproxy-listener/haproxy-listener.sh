@@ -9,3 +9,6 @@ version=0.1
 
 #mainainer: Will Russell 
 #presented as-is without warranty or expectation of support
+
+### THOUGHT PROCESS BLOCK ###
+# okay so this will be running in a container, scoped to each infra node with a valid router pod
