@@ -17,34 +17,54 @@
 # https://access.redhat.com/labs/nptcpdump/
 
 
+#=======================================
+#REVISION: 7/23/24
+#todo: add check that tshark exists, if not, fail
+#todo - allow a 
+DATE=$(date +"%Y-%m-%d-%H-%M")
+LOGPATH=${DATE}_tcpanalyze_results.out
 
-echo "tcpdump quick-analyis overview script"
-echo "This script is designed to run on any and all *.pcap files in the current working directory"
-echo "press return to start analysis"
-read hold_pattern
+logic () {
+#analysis block
+echo "$(DATE)"
+echo ""
 
-echo "endpoints and packet loss overview:"
+#tshark -r ens3.pcap0 -Tfields -e frame.time_relative | sort -n | tail -1
+#get total time of pcap:
+echo "Capture timeframe by pcap" 
+echo ""
+for pcap in ./*.pcap* ; do echo $pcap; \
+#FRAME ARRIVAL TIMES:
+echo "first frame arrival time: " ; tshark -r $pcap -T fields -e frame.time | sort -n | head -1 ; echo "";\
+echo "last frame arrival time: " ; tshark -r $pcap -T fields -e frame.time | sort -n | tail -1 ; echo "";\
+echo "time differential in seconds: "; tshark -r $pcap -T fields -e frame.time_relative | sort -n | tail -1; echo ""; \
+#BYTES IN FLIGHT:
+echo "Total Rx packets observed in pcap: "; tshark -r $pcap -qz endpoints,ip | awk {'print $6'} | awk '{sum += $1} END {print sum}'; echo ""; \
+echo "Total Rx Bytes observed in pcap: "; tshark -r $pcap -qz endpoints,ip | awk {'print $7'} | awk '{sum += $1} END {print sum}'; echo ""; \
+echo "Total Tx packets observed in pcap: "; tshark -r $pcap -qz endpoints,ip | awk {'print $4'} | awk '{sum += $1} END {print sum}'; echo ""; \
+echo "Total Tx Bytes observed in pcap: "; tshark -r $pcap -qz endpoints,ip | awk {'print $5'} | awk '{sum += $1} END {print sum}'; echo ""; \
+#NONSTANDARD PACKET OBSERVATION:
+echo "tcp zero-windows observed: "; tshark -r $pcap -Y "tcp.analysis.zero_window" | wc -l; echo ""; \
+echo ""
+echo "==========================="
+echo ""
+done
+
+echo ""
+echo "##############################"
+echo ""
+
+#Get unique IP's and statistics:
+echo "Pulling unique IP's and statistics for each pcap:"
+echo ""
 echo "for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -qz endpoints,ip; done"
 for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -qz endpoints,ip; done
 
 echo ""
-echo "unique endpoints by pcap:"
-echo "for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -qz endpoints,ip; done | awk '/^1/{print $1}' | sort | uniq -c | sort -rn | head"
-for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -qz endpoints,ip | awk '/^1/{print $1}' | sort | uniq -c | sort -rn | head; done
-
-echo ""
-echo "zero-window and non-standard TCP replies (DUPs):"
-echo "./non-standard-replies.txt generated to prevent buffer overflow on large pcaps"
-echo 'for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -Y "tcp.analysis.zero_window" | wc -l ; done'
-for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -Y "tcp.analysis.zero_window" | wc -l ; done
-
-echo ""
-echo 'for pcap in ./*.pcap* ; do echo $pcap >> ./non-standard-replies.txt ; tshark -r $pcap -Y "tcp.analysis && not (tcp.analysis.acks_frame || tcp.analysis.push_bytes_sent)" >> ./non-standard-replies.txt ; echo "" >> ./non-standard-replies.txt ; done'
-for pcap in ./*.pcap* ; do echo $pcap >> ./non-standard-replies.txt ; tshark -r $pcap -Y "tcp.analysis && not (tcp.analysis.acks_frame || tcp.analysis.push_bytes_sent)" >> ./non-standard-replies.txt ; echo "" >> ./non-standard-replies.txt ; done
+echo "##############################"
 echo ""
 
-echo "TCP resets observed:"
-echo "for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -Y 'tcp.flags.reset==1' | wc -l ; done"
-for pcap in ./*.pcap* ; do echo $pcap ; tshark -r $pcap -Y "tcp.flags.reset==1" | wc -l ; done
+}
 
-echo "script completed"
+logic 2>&1 | tee $LOGPATH
+
