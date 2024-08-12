@@ -46,6 +46,8 @@ echo "Total Tx Bytes observed in pcap: "; tshark -r $pcap -qz endpoints,ip | awk
 #NONSTANDARD PACKET OBSERVATION:
 echo "tcp zero-windows observed: "; tshark -r $pcap -Y "tcp.analysis.zero_window" | wc -l; echo ""; \
 echo ""
+#SLOW PACKETS:
+echo "slow packets observed sorted by tcp.time_delta (tail -n 20):"; echo "frame   ip.src          ip.dst          tcp.time_delta  column info"; tshark -r $pcap -T fields -e frame.number -e ip.src -e ip.dst -e "tcp.time_delta" -e _ws.col.Info | sort -k4n -r | tail -n 20
 echo "==========================="
 echo ""
 done
