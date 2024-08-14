@@ -11,6 +11,11 @@
 # pull all active pids and sub-connections, plus creation date of pid:
 for pid in `awk '/.*haproxy/{print $2}' ps`; do echo "process $pid connections"; grep "$pid" ps | awk '{print $9}'; grep "ESTABLISHED.*$pid" netstat; done | tee report.out
 
+#get all connection types:
+for pid in `awk '/.*haproxy/{print $2}' ps`; do echo "process $pid connections"; grep "$pid" ps | awk '{print $9}'; grep ".*$pid" netstat; done
+
+#get connections in CLOSE_WAIT
+for pid in `awk '/.*haproxy/{print $2}' ps`; do echo "process $pid connections"; grep "$pid" ps | awk '{print $9}'; grep "CLOSE_WAIT.*$pid" netstat; done
 
 #while on a node running HaProxy:
 # pull all active pids and sub-connections, plus creation date of pid:
