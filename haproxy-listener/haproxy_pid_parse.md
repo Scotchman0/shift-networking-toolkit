@@ -11,12 +11,13 @@
  ~~~
  oc get pod -o wide -A | grep -E '<IP>|<IP>'
 ~~~
-
+git ad
 # within sosreport top level dir:
 #pull all active pids and sub-connections, plus creation date of pid:
 ~~~
-for pid in `awk '/.*haproxy/{print $2}' ps`; do echo "process $pid connections"; grep "$pid" ps | awk '{print $9}'; grep "ESTABLISHED.*$pid" netstat; done | tee report.out
+for pid in `awk '/.*haproxy/{print $2}' ps`; do echo "process $pid connections"; grep "$pid" ps | awk '{print $9}'; grep "ESTABLISHED.*$pid" netstat; done
 ~~~
+
 #get all connection types:
 ~~~
 for pid in `awk '/.*haproxy/{print $2}' ps`; do echo "process $pid connections"; grep "$pid" ps | awk '{print $9}'; grep ".*$pid" netstat; done
@@ -35,10 +36,6 @@ for pid in `awk '/.*haproxy/{print $2}' ps`; do echo "process $pid connections";
 
 # while on a node running HaProxy:
 
-#get all connections of any type:
-~~~
-for pid in `ps -axe --sort=start_time -o start_time,pid,ppid,comm  | awk '/haproxy/'`; do echo "\-\-\-\- Process $pid connection list \-\-\-\-"; ps auxwwwm | grep "$pid" | awk '{print $9}';  netstat -neopa | grep ".*$pid" ; done | tee haproxy_all_connections.out
-~~~
 
 #get connections in ESTABLISHED:
 ~~~
@@ -47,5 +44,5 @@ for pid in `ps auxwwwm | awk '/.*haproxy/{print $2}'`; do echo "process $pid con
 
 #get connections in any socket state:
 ~~~
-for pid in `ps auxwwwm | awk '/.*haproxy/{print $2}'; do echo "process $pid connections"; ps auxwwwm | grep "$pid" | awk '{print $9}'; netstat -neopa | grep ".*$pid"; done
+for pid in `ps auxwwwm | awk '/.*haproxy/{print $2}'`; do echo "process $pid connections"; ps auxwwwm | grep "$pid" | awk '{print $9}'; netstat -neopa | grep ".*$pid"; done
 ~~~
