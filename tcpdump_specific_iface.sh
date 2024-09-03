@@ -2,27 +2,36 @@
 #targeted tcpdump for host ifaces
 
 ####
-#variables:
+#variables 
+#path overrides necessary for debug shells on openshift.
+TCPDUMP=$(which tcpdump)
+PKILL=$(which pkill)
 
 IFACE1=tun0
 IFACE2=vxlan_sys_4789
 IFACE3=ens3
+IFACE4=veth117342b2
+
+SNAPLEN=110 #set to 0 for no byte size limit; reduced size is helpful for confirming flow only without all headers.
+SIZE=100 #define max size of pcap
+COUNT=5 #define number of captures
+PATH=/dev/shm
+
+OPTIONAL_FILTER='' #set to null by default but can be used to define ports or IP addresses to scope your traffic requests
+
 
 #####
-#function blocks:
+#kickstart tcpdumps in background processes with defined parameters on specified interfaces:
 start_tcpdump() {
-
-#options: -C 100 (100MB)
-#options: -W 5 (5 pcaps buffer)
-#options: -s 100 (snapshot length of 110 to truncate pcap size)
-  tcpdump -s 110 -i $IFACE1 -C 100 -W 5 -w /tmp/$IFACE1.pcap &
-  tcpdump -s 110 -i $IFACE2 -C 100 -W 5 -w /tmp/$IFACE2.pcap &
-  tcpdump -s 110 -i $IFACE3 -C 100 -W 5 -w /tmp/$IFACE3.pcap &
+  $TCPDUMP -s $SNAPLEN -i $IFACE1 -C $SIZE -W $COUNT -w $PATH/$IFACE1.pcap ${OPTIONAL_FILTER} &
+  $TCPDUMP -s $SNAPLEN -i $IFACE2 -C $SIZE -W $COUNT -w $PATH/$IFACE2.pcap ${OPTIONAL_FILTER} &
+  $TCPDUMP -s $SNAPLEN -i $IFACE3 -C $SIZE -W $COUNT -w $PATH/$IFACE3.pcap ${OPTIONAL_FILTER} &
+  $TCPDUMP -s $SNAPLEN -i $IFACE4 -C $SIZE -W $COUNT -w $PATH/$IFACE4.pcap ${OPTIONAL_FILTER} & 
 }
 
 stop_tcpdump() {
 
-  pkill tcpdump
+  $PKILL tcpdump
 
 }
 
@@ -34,6 +43,6 @@ start_tcpdump
 echo "tcpdump is now running, press return to stop capture after you observe the flapping behavior"
 read dummyfile
 stop_tcpdump
-echo "files available at /tmp/, don't forget to move them to /host if running inside a toolbox pod/debug shell:"
-ls -l /tmp/ | grep ".pcap"
+echo "files available at $PATH, don't forget to move them to /host/var/tmp/ if running inside a toolbox pod/debug shell:"
+ls -l $PATH | grep ".pcap"
 exit 0
