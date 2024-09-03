@@ -68,5 +68,7 @@ echo ""
 
 }
 
-logic 2>&1 | tee $LOGPATH
+#run the logic block and send errors like "this pcap was cut short in the middle of a packet"
+#to /dev/null so we only get valid results we care about viewing
+logic 2> /dev/null | tee $LOGPATH
 
