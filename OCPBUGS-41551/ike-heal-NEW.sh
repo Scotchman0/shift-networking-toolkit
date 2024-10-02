@@ -1,6 +1,5 @@
 #!/bin/bash
-echo "starting initial delay timer"
-sleep 5m
+sleep 15m
 echo "Running IKE heal loop..."
 # Path to the ipsec configuration file and control socket
 IPSEC_CONF="/etc/ipsec.conf"
@@ -20,7 +19,6 @@ replace_connection() {
  local conn_name="$1"
  echo "$(date): Replacing missing connection: $conn_name"
  ipsec auto --config "$IPSEC_CONF" --ctlsocket "$PLUTO_CTL" --replace "$conn_name"
- ipsec auto --config "$IPSEC_CONF" --ctlsocket "$PLUTO_CTL" --up "$conn_name"
 }
 heal_ike() {
  # Get the lists of active and defined connections
@@ -37,17 +35,17 @@ heal_ike() {
                  break
              fi
          done
-        if [[ $already_parsed -eq 1 ]]; then
-            continue
+        if [[ $already_parsed -eq 0 ]]; then
+            # Connection is missing, so replace it
+            replaced_parsed_conns+=("$parsed_conn")
+            replace_connection "$conn"
         fi
-        # Connection is missing, so replace it
-        replaced_parsed_conns+=("$parsed_conn")
-        replace_connection "$conn"
      fi
+     ipsec auto --config "$IPSEC_CONF" --ctlsocket "$PLUTO_CTL" --up "$conn"
  done
 }
 # Main loop
 while true; do
   heal_ike
-  sleep 300
+  sleep 30
 done
