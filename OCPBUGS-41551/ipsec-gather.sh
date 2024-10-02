@@ -15,6 +15,7 @@ for POD in $(oc -n openshift-ovn-kubernetes get pod -o wide | grep -E "$pod1|$po
 	oc -n openshift-ovn-kubernetes rsh $POD ip xfrm monitor > $PATH/$POD_xrfm_monitor.out
 	oc -n openshift-ovn-kubernetes rsh $POD ipsec status > $PATH/$POD_ipsec_status.out
 	oc -n openshift-ovn-kubernetes rsh $POD cat /etc/ipsec.conf > $PATH/$POD_ipsec.conf
+	#ipsec.d/cno.conf and ipsec.d/openshift.conf will only be present on 4.15+ - null capture on 4.14 is okay
 	oc -n openshift-ovn-kubernetes rsh $POD cat /etc/ipsec.d/cno.conf > $PATH/$POD_cno.conf
 	oc -n openshift-ovn-kubernetes rsh $POD cat /etc/ipsec.d/openshift.conf > $PATH/$POD_openshift.conf
 	oc -n openshift-ovn-kubernetes rsh $POD sh -c "tar -czf /tmp/libreswan.tar.gz /var/log/openvswitch/*"
