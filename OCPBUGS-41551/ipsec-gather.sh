@@ -22,6 +22,6 @@ for POD in $(oc -n openshift-ovn-kubernetes get pod -o wide | grep -E "$pod1|$po
 	oc -n openshift-ovn-kubernetes cp $POD:/tmp/libreswan.tar.gz $PATH/$POD_libreswan.tar.gz
 done
 
-tar -czf ipsec-sample-bundle_DATE=$(date +"%Y-%m-%d-%H-%M").tar.gz ./ipsec-sample-bundle/
+tar -czf ipsec-sample-bundle_${DATE}.tar.gz ./ipsec-sample-bundle/
 
 exit 0
