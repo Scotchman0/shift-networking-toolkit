@@ -10,7 +10,7 @@ DATE=$(date +"%Y-%m-%d-%H-%M")
 mkdir ./ipsec-sample-bundle
 
 for POD in $(oc -n openshift-ovn-kubernetes get pod -o wide | grep -E "$pod1|$pod2" | awk {'print $1'}); do
-	oc -n openshift-ovn-kubernetes rsh $POD ip xfrm status > $PATH/$POD_xrfm_status.out
+	oc -n openshift-ovn-kubernetes rsh $POD ip xfrm state > $PATH/$POD_xrfm_state.out
 	oc -n openshift-ovn-kubernetes rsh $POD ip xfrm policy > $PATH/$POD_xrfm_policy.out
 	oc -n openshift-ovn-kubernetes rsh $POD ipsec status > $PATH/$POD_ipsec_status.out
 	oc -n openshift-ovn-kubernetes rsh $POD cat /etc/ipsec.conf > $PATH/$POD_ipsec.conf
