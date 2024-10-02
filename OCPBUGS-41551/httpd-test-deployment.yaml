@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpd-deployment
+  namespace: test-redhat
+  labels:
+    app: httpd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpd
+  template:
+    metadata:
+      labels:
+        app: httpd
+    spec:
+      containers:
+      - name: httpd
+        image: quay.io/apachemirror/httpd:2.4.53
+        ports:
+        - containerPort: 80
+        env:
+        - name: APACHE_SERVER_NAME
+          value: "example.com"
+        - name: APACHE_ERROR_LOG
+          value: "/var/log/apache2/error.log"
+        - name: APACHE_ACCESS_LOG
+          value: "/var/log/apache2/access.log"
+        - name: APACHE_DOCUMENT_ROOT
+          value: "/usr/local/apache2/htdocs"
+        - name: APACHE_PORT
+          value: "80"
+        - name: APACHE_LISTEN_BACKLOG
+          value: "511"
+        - name: APACHE_TIMEOUT
+          value: "60"
+        - name: APACHE_MAX_REQUESTS
+          value: "10000"
+        - name: APACHE_MAX_CONNECTIONS
+          value: "1500"
+        - name: APACHE_START_SERVER
+          value: "yes"
+        - name: APACHE_ENABLE_MPM_EVENT
+          value: "event"
+        - name: APACHE_ENABLE_MPM_WORKER
+          value: "worker"
+        - name: APACHE_ENABLE_MPM_OMP
+          value: "prefork"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5

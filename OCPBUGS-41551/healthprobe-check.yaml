@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iputils-container
+  labels:
+    app: iputils-container
+spec:
+  replicas: 50
+  selector:
+    matchLabels:
+      app: iputils-container
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: iputils-container
+    spec:
+      containers:
+      - name: iputils-container
+        image: quay.io/rhn_support_wrussell/iputils-container:latest
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            /tmp/script.sh
+        volumeMounts:
+        - name: script-volume
+          mountPath: /tmp/script.sh
+      volumes:
+      - name: curl-script
+        emptyDir: {}
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: curl-script
+data:
+  script.sh: |
+             for i in $(oc get pod -n openshift-dns -o wide | grep dns-default | awk {'print $6'}); 
+             do RESULT=$(oc -n openshift-dns rsh $POD curl --connect-timeout 1 -kv -s ${i}:5353/health 2>&1 ) ; 
+               if [[ $? -eq 28 ]]; then echo $i; echo $(oc -n openshift-dns get pod -o wide | grep $i | awk {'print $7}') Timed out ; 
+                 else dummyvalue=true; 
+               fi; echo "."; 
+             done
