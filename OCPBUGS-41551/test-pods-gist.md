@@ -1,3 +1,4 @@
+~~~
 oc apply -f nginx-daemonset.yaml
 oc get pods --no-headers -o wide| awk '{print $6}' > files/ips.txt
 for pod in `oc get pods -n default --no-headers | awk '{print $1}'`; do oc cp files/ $pod:/tmp; done
@@ -31,3 +32,4 @@ spec:
       containers:
         - name: nginx
           image: quay.io/redhattraining/hello-world-nginx
+~~~
