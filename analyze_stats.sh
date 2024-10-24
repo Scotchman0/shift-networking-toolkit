@@ -25,7 +25,7 @@ DATAGATHER() {
 #LBTOT value count per pod:
 echo "lbtot values -- note that these are UNIQUE values and if cookies are enabled will not increment after initial hit for that client"
 echo "================================================================="
-for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE | awk '{print $2, $26}'; done
+for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE | awk '{print $2, $26}'; done | tee $lbtot_$ROUTE.out
 echo "================================================================="
 
 echo "" 
@@ -34,10 +34,22 @@ echo ""
 echo "HTTP response values 1xx, 2xx, 3xx, 4xx, 5xx totals"
 echo "alignment is not always perfect here due to nature of stats gather, refer to generated ${ROUTE}_highlight.out for complete table."
 echo "=================================================================="
-for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE | awk '{print $2, $32, $33, $34, $35, $36}' ; done
+for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep $ROUTE | awk '{print $2, $32, $33, $34, $35, $36}' ; done | tee http_response_$ROUTE.out
 echo "================================================================="
 
 echo ""
+
+#ERESP OUT:
+echo "eresp hits by pods - may indicate an issue with these specific pods or their host node compared to peers"
+echo "14. eresp [..BS]: response errors. srv_abrt will be counted here also.
+     Some other errors are:
+     - write error on the client socket (won't be counted for the server stat)
+     - failure applying filters to the response."
+echo "=================================================================="
+for i in $(ls ./ | grep _cleaned.out); do echo $i; cat $i | sed 's/|/ /' | grep -w $ROUTE | awk '{print $2, $12}'; done | tee eresp_hits_$ROUTE.out
+echo "=================================================================="
+echo ""
+
 }
 
 highlights_block () {
