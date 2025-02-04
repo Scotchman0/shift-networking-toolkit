@@ -4,6 +4,7 @@
 #https://github.com/Scotchman0/shift-networking-toolkit/blob/main/network-sos.sh
 #supplemental manual pull for sosreport for networking/ss/ethtool capture on target host
 #largely attempting to replicate sos's network.py script for one-off gathers.
+#Run as root on host node (not from within toolbox container, we're not escaping the chroot for these calls).
 
 DATE=$(date +"%Y-%m-%d-%H-%M-%S")
 TARGETDIR=./sos-netdump-${DATE}
