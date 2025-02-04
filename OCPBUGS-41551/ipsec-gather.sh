@@ -1,5 +1,5 @@
 #!/bin/bash
-#data-gatherer-2000
+#ipsec log pull for analysis on two affected pods with communication rate failures
 
 pod1=""
 pod2=""
