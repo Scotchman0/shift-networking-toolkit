@@ -1,5 +1,9 @@
 #!/bin/bash
+#network-sos.sh 
+#Will Russell
+#https://github.com/Scotchman0/shift-networking-toolkit/blob/main/network-sos.sh
 #supplemental manual pull for sosreport for networking/ss/ethtool capture on target host
+#largely attempting to replicate sos's network.py script for one-off gathers.
 
 DATE=$(date +"%Y-%m-%d-%H-%M-%S")
 TARGETDIR=./sos-netdump-${DATE}
