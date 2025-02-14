@@ -85,4 +85,4 @@ cd ..
 tar -czf $TARGETDIR.tar.gz ./$TARGETDIR
 
 echo "export complete, please attach the resulting tarball"
-ls | grep $TARGETDIR.tar.gz
+echo ${TARGETDIR}.tar.gz
