@@ -31,3 +31,6 @@ usage: curl_loop_until_error.sh `<url>` (can also modify the script directly to 
 
 # IPUtils-Container
 A simple UBI dockerfile and companion pod.yaml that deploy a test suite pod to enable curl tests and other network config requests to replicate and troubleshoot problems on OpenShift
+
+# network-sos.sh
+A network-targeted data-dump pull that replicates the network plugin from sos for specific use-cases where sos-report cannot or will not complete network pulls on an impacted host. Must be run as root on the target node (chroot /host), and not from toolbox as it isn't escaping it's chroot state the way sos would inside a container. Tries to pull similar `sos_commands/networking/*` output for referencing directly with a time-stamped tarball creation.
