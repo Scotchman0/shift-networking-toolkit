@@ -1,6 +1,6 @@
 #!/bin/bash
 #stale-nat-eip.sh
-#William Russell and Courtney Rhum
+#William Russell and Courtney Ruhm
 #Designed to assist with https://issues.redhat.com/browse/OCPBUGS-50709
 #provided as-is with no warranties express or inferred for debug purposes only
 #To be run on OpenShift 4.14 and later - OVNkube-IC architecture only
@@ -15,7 +15,7 @@ for nodeName in $(oc get nodes | grep -v NAME | awk {'print $1'}); do
      echo "=========="
      echo $nodeName
      ips=$(oc get egressip | awk {'print $2'} | grep -v "EGRESSIPS")
-     localpod=$(oc get pod -n openshift-ovn-kubernetes -o wide | grep -v NAME | grep $nodeName | grep ovnkube-node | awk {'print $1'})
+     localpod=$(oc get pod -n openshift-ovn-kubernetes -o wide | grep -v NAME | grep -w "$nodeName" | grep ovnkube-node | awk {'print $1'})
      echo "localpod:"
      echo $localpod
      listOfNats=$(oc -n openshift-ovn-kubernetes exec -it $localpod -c northd -- ovn-nbctl --format=csv --column "_uuid, external_ids, external_ip" find nat external-ids:\"name\"!=\"\")
@@ -28,11 +28,11 @@ for nodeName in $(oc get nodes | grep -v NAME | awk {'print $1'}); do
         else
             echo "match not found, stale nat"
             suuid=$(echo $nat | awk -F ',' {'print $1'})
-            slr=$(oc -n openshift-ovn-kubernetes exec -it $localpod -c northd -- ovn-nbctl --bare --column=_uuid,nat find logical_router | grep $suuid | awk {'print $1'})
+            slr=$(oc -n openshift-ovn-kubernetes exec -it $localpod -c northd -- ovn-nbctl --bare --column=_uuid,nat find logical_router | grep -B1 $suuid | awk {'print $1'} | head -n 1)
             echo "suuid: $suuid"
             echo "slr: $slr"
-            #BELOW LINE COMMENTED OUT PENDING FURTHER TESTS
-            #oc -n openshift-ovn-kubernetes exec -it $localpod -c northd -- ovn-nbctl remove logical_router ${slr} nat ${suuid} ; echo removed nat ${suuid} from logical router ${slr}
+            #the below command string will remove any stale NAT entries that do not match existing/expected egressIP entries. comment it out in order to log only
+            oc -n openshift-ovn-kubernetes exec -it $localpod -c northd -- ovn-nbctl remove logical_router ${slr} nat ${suuid} ; echo removed nat ${suuid} from logical router ${slr}
         fi
     done
  done | tee nat-query.out
