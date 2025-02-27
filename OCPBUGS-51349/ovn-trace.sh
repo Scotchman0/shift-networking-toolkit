@@ -3,7 +3,8 @@
 #Will Russell
 #2/27/25
 #For use in Red Hat troubleshooting diagnostics sessions; provided with AS-IS with no warranty, guarantees or support expectations
-##CURRENTLY IN PROGRESS - NOT FULLY WORKING
+#usage: usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod> <target-namespace> <target-port>
+#will trace ovn-flows between pods directly
 
 set -e
 DATE=$(date +"%Y-%m-%d-%H-%M-%S")
