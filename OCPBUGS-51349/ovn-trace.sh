@@ -61,8 +61,14 @@ if [ -z "$1" ]
               echo "client mac address: ${CLIENTMAC}"
               TARGETMAC=$(oc -n openshift-ovn-kubernetes exec -it $TARGETOVN -c northd -- ovn-nbctl show | grep -A1 $TARGETPOD | grep -o ..:..:..:..:..:..)
               echo "target mac address: ${TARGETMAC}"
+              CONST=$(echo '"'${CLIENTNS}_${CLIENTPOD}'"')
+              COMPILESTRING="ovn-trace ${CLIENTHOST} --ct=new 'inport=="${CONST}" && eth.dst==${TARGETMAC} && eth.src==${CLIENTMAC} && ip4.dst==${TARGETIP} && ip4.src==${CLIENTIP} && ip.ttl==64 && tcp.dst==${TARGETPORT}' --lb-dst ${TARGETIP}:${TARGETPORT}"
+              echo $COMPILESTRING
               echo "running trace" 
-              oc -n openshift-ovn-kubernetes exec -it ${CLIENTOVN} -c northd -- ovn-trace "${CLIENTHOST}" --ct=new 'inport=="${CLIENTNS}_${CLIENTPOD}" && eth.dst==${TMAC} && eth.src==${CLIENTMAC} && ip4.dst=="${TARGETIP}" && ip4.src=="${CLIENTIP}" && ip.ttl==64 && tcp.dst=="${TARGETPORT}"' --lb-dst "${TARGETIP}":"${TARGETPORT}" | tee $LOGFILE
+              oc -n openshift-ovn-kubernetes exec -it ${CLIENTOVN} -c northd -- /bin/bash -c "${COMPILESTRING}" | tee $LOGFILE
+              echo "" >> $LOGFILE
+              echo "TRACE COMMAND:" >> $LOGFILE
+              echo $COMPILESTRING >> $LOGFILE
               echo "trace compiled - review log at ${LOGFILE}"
             fi
           fi
