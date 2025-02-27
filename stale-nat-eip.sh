@@ -32,7 +32,8 @@ for nodeName in $(oc get nodes | grep -v NAME | awk {'print $1'}); do
             echo "suuid: $suuid"
             echo "slr: $slr"
             #the below command string will remove any stale NAT entries that do not match existing/expected egressIP entries. comment it out in order to log only
-            oc -n openshift-ovn-kubernetes exec -it $localpod -c northd -- ovn-nbctl remove logical_router ${slr} nat ${suuid} ; echo removed nat ${suuid} from logical router ${slr}
+            #below line needs review - opening PR:
+            #oc -n openshift-ovn-kubernetes exec -it $localpod -c northd -- ovn-nbctl remove logical_router ${slr} nat ${suuid} ; echo removed nat ${suuid} from logical router ${slr}
         fi
     done
  done | tee nat-query.out
