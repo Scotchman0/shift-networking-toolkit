@@ -16,9 +16,17 @@ POD="client-dns-podname-here"
 ##Often, this happens due to network and remote server situations that you cannot affect locally. 
  
 ##iterate over all peer pods; get the exit result of a connection; if it's a timeout (28) then log the NAME of the NODE and the result timeout; otherwise skip + add a dot to progress log. 
-for i in $(oc get pod -n openshift-dns -o wide | grep dns-default | awk {'print $6'}); do RESULT=$(oc -n openshift-dns rsh $POD curl --connect-timeout 1 -kv -s ${i}:5353/health 2>&1 ) ; if [[ $? -eq 28 ]]; then 
-echo $i; echo $(oc -n openshift-dns get pod -o wide | grep $i | awk {'print $7}') Timed out ; else dummyvalue=true; fi; echo "."; done | tee $PROBELOG 
-} 
+for SOURCE in $(oc get pod -n openshift-dns | awk {'print $1'}); do 
+	echo ${SOURCE}
+    for TARGET in $(oc get pod -n openshift-dns -o wide | grep dns-default | awk {'print $6'}); do RESULT=$(oc -n openshift-dns rsh $SOURCE curl --connect-timeout 1 -kv -s ${TARGET}:5353/health 2>&1 )
+      if [[ $? -eq 28 ]]
+      then 
+     	echo $TARGET 
+        echo $(oc -n openshift-dns get pod -o wide | grep $TARGET | awk {'print $7'}) Timed out
+      else dummyvalue=true; fi; echo "."; 
+    done
+done | tee $PROBELOG 
+}
 
 healthprobe
 echo "done"
