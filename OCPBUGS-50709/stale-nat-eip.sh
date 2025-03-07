@@ -13,11 +13,27 @@
 
 DATE=$(date +"%Y-%m-%d-%H-%M") 
 NATLOG=${DATE}-nat-check.out 
+DUMPFOLDER=natlists_${DATE}
 
+#dump the NAT and LR tables for cross-check and tarball it with the log output results for review
 dump-tables() {
-echo "option not currently implemented"
-##TODO: dump the NAT tables and the LR outputs for cross-comparison to a log when called with case option (not implemented)
+echo "pulling total nat list for cross-comparison"
+mkdir ./$DUMPFOLDER
+for nodeName in $(oc get nodes | grep -v NAME | awk {'print $1'}); do
+  echo $nodeName
+  ips=$(oc get egressip | awk {'print $2'} | grep -v "EGRESSIPS")
+  localpod=$(oc get pod -n openshift-ovn-kubernetes -o wide | grep -v NAME | grep -w "$nodeName" | grep ovnkube-node | awk {'print $1'})
+  router_uuid=$(oc -n openshift-ovn-kubernetes exec -it $localpod -c nbdb -- ovn-nbctl --bare --column=_uuid,nat find logical_router)
+  listOfNats=$(oc -n openshift-ovn-kubernetes exec -it $localpod -c nbdb -- ovn-nbctl --format=csv --column "_uuid, external_ids, external_ip, logical_ip" find nat)
+  echo $listOfNats >> ${DUMPFOLDER}/${localpod}_${nodeName}_nats.csv
+  echo $router_uuid >> ${DUMPFOLDER}/${localpod}_${nodeName}_logical_routers.out
+done
+  cp $NATLOG $DUMPFOLDER/
+  tar -czf ${DUMPFOLDER}.tar.gz ./${DUMPFOLDER}
+  echo "tarball created:"
+  ls | grep "${DUMPFOLDER}"
 }
+
 
 nat-check(){
 for nodeName in $(oc get nodes | grep -v NAME | awk {'print $1'}); do
@@ -94,19 +110,17 @@ if test $# -gt 0; then #general while loop to lock behavior surrounding case opt
     echo "arg: --debug execute script with additional verbosity (dry-run mode only)"
     echo "arg: --clean execute script and peform nat cleanup tasking"
     ;;
-    --dump-logs) #dump the full nat table for review
-    echo "gathering full NAT entry list for cross-check"
-    dump-tables
-    ;;
     *) #any other arg input to be ignored or handled with default run:
     echo "This script can be run with options, run with --help or -h for more information"
     echo "defaulting to dry-run mode"
     nat-check
+    dump-tables
     ;;
   esac
 else
   echo "This script can be run with options, run with --help or -h for more information"  
   nat-check
+  dump-tables
 fi
 
 
