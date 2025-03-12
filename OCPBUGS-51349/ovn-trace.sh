@@ -3,7 +3,7 @@
 #Will Russell
 #2/27/25
 #For use in Red Hat troubleshooting diagnostics sessions; provided with AS-IS with no warranty, guarantees or support expectations
-#usage: usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod (or IP)> <target-port> [optional] <target-namespace> [optional]
+#usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> optional: [target-namespace] [ClusterServiceIP:port]
 #will trace ovn-flows between pods directly
 #https://github.com/tssurya/ovnk-interconnect-demo-yamls/tree/main 
 
