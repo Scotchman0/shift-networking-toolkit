@@ -166,5 +166,3 @@ if [ -z "$1" ] #no client podname defined?
     fi
 fi
 exit 0 
-
-##//INTERNAL --> DEBUG THE HANDLING ORDER ON THESE CALLS, THE LOGICAL FLOW IS NOT CORRECT AFTER #140
