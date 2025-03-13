@@ -1,11 +1,12 @@
 #!/bin/bash
-#scripted ovn-trace for faster analysis
+#scripted ovn-trace for faster analysis/easier data-gathering
 #Will Russell
-#2/27/25
 #For use in Red Hat troubleshooting diagnostics sessions; provided with AS-IS with no warranty, guarantees or support expectations
+#For use with OpenShift 4.14+ (OVN-IC architecture)
+#trace pod to pod, pod to pod (via service), pod to node, pod to external client.
+#Will create a logfile report of the directional trace, and includes the local `ovn-trace` syntax that was executed within the pod.
+#See https://github.com/tssurya/ovnk-interconnect-demo-yamls/tree/main for sample demo traces
 #usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> optional: [target-namespace] [ClusterServiceIP:port]
-#will trace ovn-flows between pods directly
-#https://github.com/tssurya/ovnk-interconnect-demo-yamls/tree/main 
 
 set -e
 DATE=$(date +"%Y-%m-%d-%H-%M-%S")
@@ -58,7 +59,7 @@ tracehandler (){
               #define a combined literal string of "namespace_client-podname" including quotations
               CONST=$(echo '"'${CLIENTNS}_${CLIENTPOD}'"')
               #define a combined literal string with variable expansion pre-handled on the host to populate the requisite ovn-trace command"
-              COMPILESTRING="ovn-trace ${CLIENTHOST} --ct=new 'inport=="${CONST}" && eth.src==${CLIENTMAC} && eth.dst==${TARGETMAC}  && ip4.dst==${TARGETIP} && ip4.src==${CLIENTIP} && ip.ttl==64 && tcp && tcp.src==${CLIENTPORT} && tcp.dst==${TARGETPORT}' ${LOADBALANCER}"
+              COMPILESTRING="ovn-trace --ct=new 'inport=="${CONST}" && eth.src==${CLIENTMAC} && eth.dst==${TARGETMAC}  && ip4.dst==${TARGETIP} && ip4.src==${CLIENTIP} && ip.ttl==64 && tcp && tcp.src==${CLIENTPORT} && tcp.dst==${TARGETPORT}' ${LOADBALANCER}"
               echo $COMPILESTRING
               echo "running trace" 
               #execute the compiled command for ovn-trace on the client's ovnkube-node pod and pipe the results to log
@@ -72,7 +73,7 @@ tracehandler (){
 ##HELP BLOCK interrupt:
     if [[ $1 == "--help" || $1 == "-h" || $1 == "help" ]]
     then
-      echo "ovn-trace.sh:"
+      echo "ovn-trace:"
       echo "This script is designed to facilitate easy ovn-trace commands for faster support and diagnostics, for use on OpenShift 4.14+"
       echo ""
       echo "USAGE"
