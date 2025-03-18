@@ -1,95 +1,169 @@
 #!/bin/bash
-#scripted ovn-trace for faster analysis
-#Will Russell (SunBro)
-#10.06.23
+#scripted ovn-trace for faster analysis/easier data-gathering
+#Will Russell
 #For use in Red Hat troubleshooting diagnostics sessions; provided with AS-IS with no warranty, guarantees or support expectations
-##CURRENTLY IN PROGRESS - NOT FULLY WORKING
+#For use with OpenShift 4.14+ (OVN-IC architecture)
+#trace pod to pod, pod to pod (via service), pod to node, pod to external client.
+#Will create a logfile report of the directional trace, and includes the local `ovn-trace` syntax that was executed within the pod.
+#See https://github.com/tssurya/ovnk-interconnect-demo-yamls/tree/main for sample demo traces
+#usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> optional: [target-namespace] [ClusterServiceIP:port]
+
+set -e
+DATE=$(date +"%Y-%m-%d-%H-%M-%S")
+LOGFILE=./ovn-trace-${DATE}.log
 
 
-#SET GLOBAL VARIABLES:
+##REQUIRED INPUTS FOR ALL:
+#ovn-trace --ct new 'inport=<client-ns>_<client-pod> && eth.src=<mac-of-pod> && eth.dst==<gateway-of-pod> && ip4.src==<IP-of-pod> && ip4.dst==<targetIP> && ip.ttl=64 && tcp && tcp.src==<source-port> && tcp.dst=<destination-port>'
+#optional addtional flag: `--lb-dst 172.18.0.3:6443` (serviceIP:port) - needed in event of calling an endpoint via a service tracing. (follows the infile params)
 
-DATE=$(date +"%Y-%m-%d-%H-%M")
+#inputs required from user (always): 
+# client podname and namespace
+# target podname and namespace (or IP and port)
+# optional: are we going through a service (svc IP + PORT)
 
-#get master node IP:
-MASTER1_IP=$(oc get nodes -o wide | grep master | awk {'print $6'} | sed -n '1 p')
-MASTER2_IP=$(oc get nodes -o wide | grep master | awk {'print $6'} | sed -n '2 p')
-MASTER3_IP=$(oc get nodes -o wide | grep master | awk {'print $6'} | sed -n '3 p')
+tracehandler (){
+  echo "obtaining variables:"
+              echo "client: ${CLIENTPOD}"
+              echo "client namespace: ${CLIENTNS}"
+              echo "target: ${TARGETPOD}"
+              echo "target port: ${TARGETPORT}"
+              #define the source port for the trace as neutral and traceable port - hardcoded for now but can be overriden here.
+              #failing to set source port results in `tp.src=0` being selected which might impact trace results
+              CLIENTPORT=5555
+              echo "client port: ${CLIENTPORT}"
+              #define client IP as pod IP
+              CLIENTIP=$(oc get pod -n $CLIENTNS -o wide | grep -w $CLIENTPOD | awk {'print $6'})
+              echo "client IP: ${CLIENTIP}"
+              echo "target IP: ${TARGETIP}"
+              #define client host as node name where client pod is scheduled
+              CLIENTHOST=$(oc get pod $CLIENTPOD -n $CLIENTNS -o wide | grep -v "NAME" | awk {'print $7'})
+              echo "client host node: ${CLIENTHOST}"
+              #define target host as node name where target pod is scheduled
+              TARGETHOST=$(oc get pod $TARGETPOD -n $TARGETNS -o wide | grep -v "NAME" | awk {'print $7'})
+              echo "client target host node: ${TARGETHOST}"
+              #define the ovnkube-node pod running on the client's host node
+              CLIENTOVN=$(oc get pod -n openshift-ovn-kubernetes -o wide | grep ovnkube-node | grep $CLIENTHOST | awk {'print $1'})
+              echo "client OVN pod: ${CLIENTOVN}"
+              #define the ovnkube-node pod running on the target's host node
+              TARGETOVN=$(oc get pod -n openshift-ovn-kubernetes -o wide | grep ovnkube-node | grep $TARGETHOST | awk {'print $1'})
+              echo "target OVN pod: ${TARGETOVN}"
+              #enter the client's ovnkube-node pod and pull the MAC address of the primary eth0 iface of client pod
+              CLIENTMAC=$(oc -n openshift-ovn-kubernetes exec -it $CLIENTOVN -c northd -- ovn-nbctl show | grep -A1 $CLIENTPOD | grep -o ..:..:..:..:..:..)
+              echo "client mac address: ${CLIENTMAC}"
+              #Pull the MAC of the router port on the source node (routing table entry)
+              TARGETMAC=$(oc -n openshift-ovn-kubernetes exec -it $CLIENTOVN -c northd -- ovn-nbctl --no-leader show | grep -A3 'port rtos' | grep -o ..:..:..:..:..:..)
+              echo "target mac address: ${TARGETMAC}"
+              #if loadbalancer is defined, spit it out:
+              echo "LOADBALANCER: $LOADBALANCER"
+              #define a combined literal string of "namespace_client-podname" including quotations
+              CONST=$(echo '"'${CLIENTNS}_${CLIENTPOD}'"')
+              #define a combined literal string with variable expansion pre-handled on the host to populate the requisite ovn-trace command"
+              COMPILESTRING="ovn-trace --ct=new 'inport=="${CONST}" && eth.src==${CLIENTMAC} && eth.dst==${TARGETMAC}  && ip4.dst==${TARGETIP} && ip4.src==${CLIENTIP} && ip.ttl==64 && tcp && tcp.src==${CLIENTPORT} && tcp.dst==${TARGETPORT}' ${LOADBALANCER}"
+              echo $COMPILESTRING
+              echo "running trace" 
+              #execute the compiled command for ovn-trace on the client's ovnkube-node pod and pipe the results to log
+              oc -n openshift-ovn-kubernetes exec -it ${CLIENTOVN} -c northd -- /bin/bash -c "${COMPILESTRING}" | tee $LOGFILE
+              echo "" >> $LOGFILE
+              echo "TRACE COMMAND:" >> $LOGFILE
+              echo $COMPILESTRING >> $LOGFILE
+              echo "trace compiled - review log at ${LOGFILE}"
+}
 
-#set namespace to ovn-kubernetes to ensure we can rsh/execute on target pods
-oc project openshift-ovn-kubernetes
+##HELP BLOCK interrupt:
+    if [[ $1 == "--help" || $1 == "-h" || $1 == "help" ]]
+    then
+      echo "ovn-trace:"
+      echo "This script is designed to facilitate easy ovn-trace commands for faster support and diagnostics, for use on OpenShift 4.14+"
+      echo ""
+      echo "USAGE"
+      echo "usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> [target-namespace] [ClusterServiceIP:port]"
+      echo ""
+      echo "OPTIONS"
+      echo "The script will check for the following 6 args after the script execution, the first 4 are mandatory, the last 2 are optional"
+      echo ""
+      echo "Option <1> requests the name of the client pod that is making our outbound call"
+      echo "Option <2> as the name of the client namespace where said client pod is running"
+      echo "Option <3> as the name of the target pod (OR the target IP address if external)"
+      echo "Option <4> as the target port where said externalIP or target pod is listening/accepting traffic"
+      echo "Option [5] (optional) as the target namespace where the target pod is running - leave empty if calling out of the cluster"
+      echo "Option [6] (optional) as the loadbalancer IP and port combination (if you wanted to trace through a serviceIP) - example: 172.30.0.10:53"
+      echo "NOTE: this script sets a client port as '5555' for tracing simplicity, and assumes TCP traffic"
+      echo ""
+      echo "// EXAMPLES //"
+      echo ""
+      echo "POD TO POD DIRECT CALL:"
+      echo "./ovn-trace.sh dns-default-48d5d openshift-dns dns-default-6jzd8 8080 openshift-dns"
+      echo "POD TO POD VIA SERVICE"
+      echo "./ovn-trace.sh dns-default-48d5d openshift-dns dns-default-6jzd8 8080 openshift-dns 172.30.0.10:53"
+      echo "POD TO EXTERNAL IP:"
+      echo "./ovn-trace.sh dns-default-48d5d openshift-dns 8.8.8.8 53"
+      echo ""
+      exit 0
+    else
+      echo "./ovn-trace.sh [--help|-h|help] for options and usage"
+    fi
 
-#Get OVN-kube-master pod target
-OVNMASTER=$(oc get pods -n openshift-ovn-kubernetes | grep master | awk {'print $1'} | head -n 1)
-
-#Get Default service IP address for basic testing
-DEFAULTSERVICEIP=$(oc get svc -n default | grep ClusterIP | grep kubernetes | awk {'print $3'})
-
-
-#Get source pod variables:
-echo "insert source podname for OVN-trace and press return: <example>: iputils-container-001"
-read SOURCEPOD
-
-echo "insert source namespace and press return: <example>: rh-testing"
-read SOURCENS
-
-#Get source pod address details (IP/MAC/HOST):
-#source pod mac
-ETHSRC=$(oc rsh ${OVNMASTER} ovn-nbctl --no-leader show | grep -i ${SOURCEPOD} -A 1 | grep addresses | awk '{print $2}' | cut -c 3-)
-#source pod IP (easier to pull directly from pod yaml:)
-IPV4SRC=$(oc get pod/${SOURCEPOD} -n ${SOURCENS} -o yaml | grep ip: | awk {'print $3'})
-#Source pod HOST node:
-SPHOST=$(oc get pod/${SOURCEPOD} -n ${SOURCENS} -o wide | awk {'print $7'} | grep -v NODE)
-#Source pod HOST node IP:
-SPHOSTIP=$(oc get nodes -o wide | grep ${SPHOST} | awk {'print $6'})
-
-#source pod host node MAC
-ETHDST=$(oc rsh ${OVNMASTER} ovn-nbctl --no-leader show | grep -i "port rtos-${SPHOST}" -A3 | grep mac: | awk {'print $2'} | tr -d '"' | sed 's/^M//g')
-
-echo "do you want to specify a target pod (y/N)? Selecting N will test against default kubernetes service IP address for basic trace"
-read option
-
-case $option in
-	 y|Y|yes) 
-     echo "specify target podname and press return: <example>: targetpod-002"
-     read TARGETPOD
-     echo "specify target namespace and press return: <example>: rh-testing"
-     read TARGETNS
-     #target pod mac
-     TPMAC=$(oc rsh ${OVNMASTER} ovn-nbctl --no-leader show | grep -i ${TARGETPOD} -A 1 | grep addresses | awk '{print $2}' | cut -c 3-)
-     #target pod IP (easier to pull directly from pod yaml:)
-     TPIP=$(oc get pod/$TARGETNS -n $SOURCENS -o yaml | grep ip: | awk {'print $3'})
-     #target pod host node:
-     TPHOST=$(oc get pod/$TARGETPOD -o wide -n $TARGETNS | awk {'print $7'} | grep -v NODE)
-
-     ;;
-     n|N|no)
-     echo "continuing with basic test against the default service IP for kubernetes"
-     ;;
-     *)
-     echo "unexpected answer inserted, defaulting to no target, continuing with basic test against default kubernetes service IP"
-     ;;
- esac
-
-echo "all variables"
-echo $MASTER1_IP
-echo $MASTER2_IP
-echo $MASTER3_IP
-echo $OVNMASTER
-echo $DEFAULTSERVICEIP
-echo $SOURCEPOD
-echo $SOURCENS
-echo $SPHOST
-echo $ETHDST
-echo $ETHSRC
-echo $IPV4SRC
-echo $DATE
-
-#redefine podname with quotes for usage in string:
-SOURCEPOD=\"${SOURCEPOD}\"
-
-##TRACE COMMAND COMPILED:
-#echo the command out first for logging:
-echo "oc -n openshift-ovn-kubernetes rsh -c ovnkube-master ${OVNMASTER} ovn-trace -p /ovn-cert/tls.key -c /ovn-cert/tls.crt -C /ovn-ca/ca-bundle.crt --db ssl:${MASTER1_IP}:9642,ssl:${MASTER2_IP}:9642,ssl:${MASTER3_IP}:9642 ${SPHOST} 'inport == ${SOURCEPOD} && eth.src == ${ETHSRC} && eth.dst == ${ETHDST} && ip4.src == ${IPV4SRC} && ip4.dst == ${SPHOSTIP} && ip.ttl == 64 && icmp4.type == 8'" | tee test.out
-
-#execute it:
-oc -n openshift-ovn-kubernetes rsh -c ovnkube-master ${OVNMASTER} ovn-trace -p /ovn-cert/tls.key -c /ovn-cert/tls.crt -C /ovn-ca/ca-bundle.crt --db ssl:${MASTER1_IP}:9642,ssl:${MASTER2_IP}:9642,ssl:${MASTER3_IP}:9642 ${SPHOST} 'inport == ${SOURCEPOD} && eth.src == ${ETHSRC} && eth.dst == ${ETHDST} && ip4.src == ${IPV4SRC} && ip4.dst == ${SPHOSTIP} && ip.ttl == 64 && icmp4.type == 8' | tee trace-${SOURCEPOD}-${DATE}.out
+#set conditional exits to ensure options are populated before executing:
+#required input flow:
+#ovn-trace.sh required: [<client-pod> <client-namespace> <target-pod-or-externalIP> <target-port>] optional: [ <target-pod-namespace> <serviceIP:port>]
+if [ -z "$1" ] #no client podname defined?
+  then
+    echo "Missing variable: no client pod defined"
+    echo "usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> optional: [target-namespace] [ClusterServiceIP:port]"
+  else 
+    #define client pod as arg $1
+    CLIENTPOD="$1"
+    if [ -z "$2" ] #no client namespace defined?
+    then
+        echo "Missing variable: no client namespace defined"
+        echo "usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> optional: [target-namespace] [ClusterServiceIP:port]"
+    else 
+        #define client namespace as arg $2
+        CLIENTNS="$2"
+        if [ -z "$3" ] #no target IP or pod defined?
+        then
+        echo "Missing variable: no target pod or destination IP defined"
+        echo "usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> optional: [target-namespace] [ClusterServiceIP:port]"
+        else
+          #define target pod as arg $3
+          TARGETPOD="$3"
+          if [ -z "$4" ] #no port defined?
+          then
+          echo "no target port defined"
+          echo "usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> optional: [target-namespace] [ClusterServiceIP:port]"
+          else #input 4 IS defined:
+            #define target port as arg $4
+            TARGETPORT="$4"
+            #here is where we fire off the request no mater what, checking to see if input 5 or input 6 are populated to inject additional data:
+            if [ -z "$5" ] #namespace field is empty?
+            then
+                #set the value to the exact input provided (IP address) - assume external target
+                TARGETIP="$3"
+                echo "input 5 (target namespace) is missing"
+                echo "setting targetIP to $TARGETIP and assuming that you supplied an IP address instead of a podname"
+                echo "usage: ovn-trace.sh <client-pod> <client-namespace> <target-pod-or-externalIP> <target-port> optional: [target-namespace] [ClusterServiceIP:port]"
+                tracehandler
+              else
+                TARGETNS="$5"
+                echo "target namespace: ${TARGETNS}"
+                TARGETIP=$(oc get pod -n $TARGETNS -o wide | grep -w $TARGETPOD | awk {'print $6'})
+                if [ -z "$6" ] #defined loadbalancer?
+                then
+                #we don't need to do anything here if $6 is null just run it with existing vars
+                  echo "input 6 (loadbalancer <IP>:<port> ) is missing"
+                  echo "omitting loadbalancer flag from trace"
+                  echo "calling tracehandler from INPUT 6 is NOT POPULATED"
+                  tracehandler
+                else
+                  #if $6 is defined, then we're calling a loadbalancer option so inject it:
+                  echo "setting loadbalancer as --lb-dst $6"
+                  LOADBALANCER="--lb-dst=${6}"
+                  tracehandler
+                fi
+            fi
+          fi
+        fi
+    fi
+fi
+exit 0 
