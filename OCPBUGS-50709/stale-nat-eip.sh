@@ -39,7 +39,8 @@ nat-check(){
 for nodeName in $(oc get nodes | grep -v NAME | awk {'print $1'}); do
   echo "=========="
   echo ${nodeName}
-  ips=$(oc get egressip | awk {'print $2'} | grep -v "EGRESSIPS")
+  #get egressIPs from status output - requires 'jq'
+  ips=$(oc get egressip -o json | jq -r '.items[] | .status.items[]? | .egressIP')
   echo "egressIPs:"
   echo "$ips"
   #get the pod name of the ovnkube-node host pod
@@ -81,12 +82,19 @@ for nodeName in $(oc get nodes | grep -v NAME | awk {'print $1'}); do
 done | tee ${NATLOG}
 }
 
-
+#launch commands:
 echo "Stale-nat-eip.sh is designed to help identify nat flows involved with EgressIP handling on Openshift clusters running OVNkubernetes"
 echo "This script is designed to be run on openshift 4.14 clusters or later, and is considered a diagnostics supplement only"
 echo "Please open a case with Red Hat Support for more information and assistance"
-nat-check
-dump-tables
+
+#Early fail/exit if jq can't be found to avoid softlocks/bad output:
+if [[ ! $(which jq) ]]
+  then echo "jq not installed/found - please ensure you have jq installed for json parsing required by this script"
+  exit 1
+else
+  nat-check
+  dump-tables
+fi
 
 echo "gather completed"
 exit 0
