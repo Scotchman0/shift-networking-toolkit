@@ -21,7 +21,7 @@ echo "pulling total nat list for cross-comparison"
 mkdir ./$DUMPFOLDER
 for nodeName in $(oc get nodes | grep -v NAME | awk {'print $1'}); do
   echo $nodeName
-  ips=$(oc get egressip | awk {'print $2'} | grep -v "EGRESSIPS")
+  ips=$(oc get egressip -o json | jq -r '.items[] | .status.items[]? | .egressIP')
   localpod=$(oc get pod -n openshift-ovn-kubernetes -o wide | grep -v NAME | grep -w "$nodeName" | grep ovnkube-node | awk {'print $1'})
   router_uuid=$(oc -n openshift-ovn-kubernetes exec -it $localpod -c nbdb -- ovn-nbctl --bare --column=_uuid,nat find logical_router)
   listOfNats=$(oc -n openshift-ovn-kubernetes exec -it $localpod -c nbdb -- ovn-nbctl --format=csv --column "_uuid, external_ids, external_ip, logical_ip" find nat)
