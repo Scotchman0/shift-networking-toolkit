@@ -44,7 +44,7 @@ for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'prin
 for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$error" > ${TARGETDIR}/haproxy_info/${i}_errors.out; done
 
 #gather pools:
-for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$pool" > ${TARGETDIR}/haproxy_info/${i}_pools.out; done
+for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$pools" > ${TARGETDIR}/haproxy_info/${i}_pools.out; done
 
 #gather sessions:
 for i in $(oc get pods -n ${namespace} | grep router | grep Running | awk {'print $1'}); do oc exec $i -n ${namespace} -- bash -c "$sessions" > ${TARGETDIR}/haproxy_info/${i}_sessions.out; done
