@@ -1,0 +1,30 @@
+#!/bin/bash
+set -euo pipefail
+
+# This bash script is a part of the ARO DnsMasq configuration
+# It's deployed as part of the 99-aro-dns-* machine config
+# See https://github.com/Azure/ARO-RP
+
+# This file can be rerun and the effect is idempotent, output might change if the DHCP configuration changes
+
+NODEIP=$(/sbin/ip --json route get 168.63.129.16 | /bin/jq -r ".[].prefsrc")
+
+if [ "$NODEIP" != "" ]; then
+    /bin/cp -Z /etc/resolv.conf /etc/resolv.conf.dnsmasq
+    SEARCHDOMAIN=$(awk '/^search/ { $1=""; print $0 }' /etc/resolv.conf.dnsmasq)
+    /bin/chmod 0744 /etc/resolv.conf.dnsmasq
+
+    cat <<EOF | /bin/tee /etc/NetworkManager/conf.d/aro-dns.conf
+# Added by dnsmasq.service
+[global-dns]
+searches=$(for i in ${SEARCHDOMAIN}; do echo -n ${i},; done)
+
+[global-dns-domain-*]
+servers=$NODEIP
+EOF
+
+    # network manager may already be running at this point.
+    # reload to update /etc/resolv.conf with this configuration
+    /usr/bin/nmcli general reload conf
+    /usr/bin/nmcli general reload dns-rc
+fi

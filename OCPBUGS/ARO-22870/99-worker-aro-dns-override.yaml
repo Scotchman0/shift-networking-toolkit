@@ -1,0 +1,19 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 99-worker-aro-dns-override
+spec:
+  config:
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,IyEvYmluL2Jhc2gKc2V0IC1ldW8gcGlwZWZhaWwKCiMgVGhpcyBiYXNoIHNjcmlwdCBpcyBhIHBhcnQgb2YgdGhlIEFSTyBEbnNNYXNxIGNvbmZpZ3VyYXRpb24KIyBJdCdzIGRlcGxveWVkIGFzIHBhcnQgb2YgdGhlIDk5LWFyby1kbnMtKiBtYWNoaW5lIGNvbmZpZwojIFNlZSBodHRwczovL2dpdGh1Yi5jb20vQXp1cmUvQVJPLVJQCgojIFRoaXMgZmlsZSBjYW4gYmUgcmVydW4gYW5kIHRoZSBlZmZlY3QgaXMgaWRlbXBvdGVudCwgb3V0cHV0IG1pZ2h0IGNoYW5nZSBpZiB0aGUgREhDUCBjb25maWd1cmF0aW9uIGNoYW5nZXMKCk5PREVJUD0kKC9zYmluL2lwIC0tanNvbiByb3V0ZSBnZXQgMTY4LjYzLjEyOS4xNiB8IC9iaW4vanEgLXIgIi5bXS5wcmVmc3JjIikKCmlmIFsgIiROT0RFSVAiICE9ICIiIF07IHRoZW4KICAgIC9iaW4vY3AgLVogL2V0Yy9yZXNvbHYuY29uZiAvZXRjL3Jlc29sdi5jb25mLmRuc21hc3EKICAgIFNFQVJDSERPTUFJTj0kKGF3ayAnL15zZWFyY2gvIHsgJDE9IiI7IHByaW50ICQwIH0nIC9ldGMvcmVzb2x2LmNvbmYuZG5zbWFzcSkKICAgIC9iaW4vY2htb2QgMDc0NCAvZXRjL3Jlc29sdi5jb25mLmRuc21hc3EKCiAgICBjYXQgPDxFT0YgfCAvYmluL3RlZSAvZXRjL05ldHdvcmtNYW5hZ2VyL2NvbmYuZC9hcm8tZG5zLmNvbmYKIyBBZGRlZCBieSBkbnNtYXNxLnNlcnZpY2UKW2dsb2JhbC1kbnNdCnNlYXJjaGVzPSQoZm9yIGkgaW4gJHtTRUFSQ0hET01BSU59OyBkbyBlY2hvIC1uICR7aX0sOyBkb25lKQoKW2dsb2JhbC1kbnMtZG9tYWluLSpdCnNlcnZlcnM9JE5PREVJUApFT0YKCiAgICAjIG5ldHdvcmsgbWFuYWdlciBtYXkgYWxyZWFkeSBiZSBydW5uaW5nIGF0IHRoaXMgcG9pbnQuCiAgICAjIHJlbG9hZCB0byB1cGRhdGUgL2V0Yy9yZXNvbHYuY29uZiB3aXRoIHRoaXMgY29uZmlndXJhdGlvbgogICAgL3Vzci9iaW4vbm1jbGkgZ2VuZXJhbCByZWxvYWQgY29uZgogICAgL3Vzci9iaW4vbm1jbGkgZ2VuZXJhbCByZWxvYWQgZG5zLXJjCmZp
+          verification: {}
+        group: {}
+        mode: 484
+        overwrite: true
+        path: /usr/local/bin/aro-dnsmasq-pre.sh
+        user:
+          name: root
