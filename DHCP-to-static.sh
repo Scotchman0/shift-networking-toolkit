@@ -26,7 +26,7 @@ if [ ! $(ls /etc/NetworkManager/system-connections) ];
   GATEWAY=$(ip route get 168.63.129.16 | awk {'print $3'} | head -n 1)
   CLUSTERSEARCH=$(awk '/^search/ { print $2; }' /etc/resolv.conf)
   SEARCHDOMAIN=$(awk '/^search/ { $1=""; print $0 }' /etc/resolv.conf)
-  NAMESERVERS=$(awk '/^nameserver/ { print $2; }' /tmp/resolv.conf | grep -v $(echo ${NODEIP} | awk -F '/' {'print $1'}))
+  NAMESERVERS=$(awk '/^nameserver/ { print $2; }' /etc/resolv.conf | grep -v $(echo ${NODEIP} | awk -F '/' {'print $1'}))
 
     else
     echo "static configuration file found at /etc/NetworkManager/system-connections/ aborting"
