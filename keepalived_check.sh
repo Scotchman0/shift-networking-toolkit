@@ -18,8 +18,6 @@
 
 DATE=$(date +"%Y-%m-%d-%H-%M-%S")
 TARGETDIR=./keepalive-gather-${DATE}
-#create folder and log:
-mkdir -p ${TARGETDIR}/logs
 
 REPORT=${TARGETDIR}/report.out
 NAMESPACES="openshift-cloud-platform-infra openshift-kni-infra openshift-nutanix-infra openshift-openstack-infra openshift-ovirt-infra openshift-vsphere-infra"
@@ -74,6 +72,10 @@ overview(){
 # this segment always fires regardless of report density (basic or full report)
 # since this function will only be called if the cluster is live (-a or -b options selected) we need to confirm
 # that the platform is accessible and can be read:
+
+#create folder and log:
+mkdir -p ${TARGETDIR}/logs
+
 # failfast if oc not found + kicklaunch
 if [[ ! $(which oc) ]]
   then echo "oc not installed/found"
@@ -99,20 +101,20 @@ fi
   done
 
   echo ${DATE} >> ${REPORT}
-  echo "ingress and API VIPs:" >> $REPORT
+  echo "ingress and API VIPs:" >> ${REPORT}
   oc get cm/cluster-config-v1 -n kube-system -o yaml |grep -A 1 VIP >> ${REPORT}
-  echo "" >> $REPORT
+  echo "" >> ${REPORT}
   echo "keepalive pod name/placement" >> ${REPORT}
   oc get pods -n ${TARGETNS} -o wide >> ${REPORT}
-  echo "" >> $REPORT
+  echo "" >> ${REPORT}
   echo "# openshift-ingress pod placement:" >> ${REPORT}
   oc get pods -n openshift-ingress -o wide >> ${REPORT}
-  echo "" >> $REPORT
+  echo "" >> ${REPORT}
   echo "-----" >> ${REPORT}
   echo "# Who has ownership of VIP right now" >> ${REPORT}
   for i in $(oc get pods -n ${TARGETNS} | grep keepalive | awk {'print $1'}); do echo $i; oc -n ${TARGETNS} logs pod/${i} -c keepalived | tail -n 15 | grep -Ei 'ingress|api'; done | tee -a ${REPORT}
   echo "-----" >> ${REPORT}
-  echo "" >> $REPORT
+  echo "" >> ${REPORT}
 }
 
 #VRRP TCPDUMP CHECK (LIVE CLUSTER)
@@ -124,22 +126,23 @@ vrrp_check(){
 curl_tests(){
   # will probe and log router pod accessibility to endpoints, VIP throughput and router pod access
   echo "canary route check via VIP:" >> $TARGETDIR/curl_tests.log
-  echo "-----"
+  echo "-----" >> $TARGETDIR/curl_tests.log
   ROUTE=$(oc get route -n openshift-ingress-canary -ojsonpath={..host})
   ROUTER=$(oc get pod -n openshift-ingress -o wide | grep -v NAME | grep Running | grep router-default | awk {'print $6'} | head -n 1)
-  curl -k --noproxy '*' -w "dnslookup: %{time_namelookup} | connect: %{time_connect} | appconnect: %{time_appconnect} | pretransfer: %{time_pretransfer} | starttransfer: %{time_starttransfer} | total: %{time_total} | size: %{size_download} | response: %{response_code}\n" -o /dev/null -s https://${ROUTE}
-  echo ""
-  echo "-----"
-  echo "canary route check - skipping VIP (router pods only)"
-  echo "-----"
+  curl -k --noproxy '*' -w "dnslookup: %{time_namelookup} | connect: %{time_connect} | appconnect: %{time_appconnect} | pretransfer: %{time_pretransfer} | starttransfer: %{time_starttransfer} | total: %{time_total} | size: %{size_download} | response: %{response_code}\n" -o /dev/null -s https://${ROUTE} 2>&1 | tee -a $TARGETDIR/curl_tests.log
+  echo "" >> $TARGETDIR/curl_tests.log
+  echo "-----" >> $TARGETDIR/curl_tests.log
+  echo "canary route check - skipping VIP (router pods only)" >> $TARGETDIR/curl_tests.log
+  echo "-----" >> $TARGETDIR/curl_tests.log
+  # iterate across all ingress pods, contacting the target route,
   for i in $(oc get pod -n openshift-ingress -o wide | grep -v NAME | awk {'print $6'})
     do echo "$i"
-      curl -k --noproxy '*' -w "dnslookup: %{time_namelookup} | connect: %{time_connect} | appconnect: %{time_appconnect} | pretransfer: %{time_pretransfer} | starttransfer: %{time_starttransfer} | total: %{time_total} | size: %{size_download} | response: %{response_code}\n" -o /dev/null -s https://${ROUTE} --resolve ${ROUTE}:443:${i}
-  done
-  echo ""
+      curl -k --noproxy '*' -m 5 -w "dnslookup: %{time_namelookup} | connect: %{time_connect} | appconnect: %{time_appconnect} | pretransfer: %{time_pretransfer} | starttransfer: %{time_starttransfer} | total: %{time_total} | size: %{size_download} | response: %{response_code}\n" -o /dev/null -s https://${ROUTE} --resolve ${ROUTE}:443:${i}
+  done 2>&1 | tee -a $TARGETDIR/curl_tests.log
+  echo "" >> $TARGETDIR/curl_tests.log
 
   #router pod to console pod accessibility checks (router to target endpoint - console pods)
-  echo "router pod to console pods curl check:"
+  echo "router pod to console pods curl check - router to endpoint validation:" >> $TARGETDIR/curl_tests.log 
   oc get pod -o wide -n openshift-ingress >> $TARGETDIR/curl_tests.log
   oc get pod -o wide -n openshift-console >> $TARGETDIR/curl_tests.log
   echo "--------" >> $TARGETDIR/curl_tests.log
@@ -149,7 +152,8 @@ curl_tests(){
   for i in $(oc get pod -n openshift-ingress | awk {'print $1'} | grep -v "NAME")
     do echo $i
       for pod in $(oc get pod -n openshift-console -o wide| grep console | awk {'print $6'})
-        do oc -n openshift-ingress rsh $i curl -k -w "dnslookup: %{time_namelookup} | connect: %{time_connect} | appconnect: %{time_appconnect} | pretransfer: %{time_pretransfer} | starttransfer: %{time_starttransfer} | total: %{time_total} | size: %{size_download} | response: %{response_code}\n" -o /dev/null -s https://${pod}:8443/healthz 
+        do echo $pod
+          oc -n openshift-ingress rsh $i curl -k -w "dnslookup: %{time_namelookup} | connect: %{time_connect} | appconnect: %{time_appconnect} | pretransfer: %{time_pretransfer} | starttransfer: %{time_starttransfer} | total: %{time_total} | size: %{size_download} | response: %{response_code}\n" -o /dev/null -s https://${pod}:8443/healthz 
       done
   done 2>&1 | tee -a $TARGETDIR/curl_tests.log
 }
@@ -158,21 +162,35 @@ curl_tests(){
 basic_report(){
   # just pull the overview report and skip additional logging - good for basic validation of setup
   overview
+  for i in $(oc get pod -n $TARGETNS | grep keepalive | awk {'print $1'})
+    do echo $i
+     timeout 10 oc -n $TARGETNS logs $i -c keepalived >> $TARGETDIR/logs/${i}_keepalived.log
+       timeout 10 oc -n $TARGETNS logs $i -c keepalived -p >> $TARGETDIR/logs/${i}_keepalived.previous.log
+  done
 }
 
 #FULL REPORT FLOW (LIVE CLUSTER)
 full_report(){
+ #runs all tests and gathers all logs (most comprehensive tests for diagnostics)
  overview
- #pull namespace inspect:
- oc adm inspect namespace $TARGETNS openshift-ingress --dest-dir=$TARGETDIR
-
  # Timeline of failover (API):
- for i in $(oc get pods -o wide -n $TARGETNS | grep keepalive  | grep master | awk {'print $1'}); do echo $i; oc logs pod/${i} -c keepalived | grep -E "MASTER|BACKUP" | grep -Ei 'api'; done >> $TARGETDIR/api_failover.log
+ for i in $(oc get pods -o wide -n $TARGETNS | grep keepalive  | grep master | awk {'print $1'}); do echo $i; oc -n $TARGETNS logs pod/${i} -c keepalived | grep -E "MASTER|BACKUP|FAULT" | grep -Ei 'api'; done >> $TARGETDIR/api_failover.log
  # Timeline of failover (ingress):
- for i in $(oc get pods -o wide -n $TARGETNS | grep keepalive | awk {'print $1'}); do echo $i; oc logs pod/${i} -c keepalived | grep -E "MASTER|BACKUP" | grep -Ei 'ingress'; done >> $TARGETDIR/ingress_failover.log
+ for i in $(oc get pods -o wide -n $TARGETNS | grep keepalive | grep -Ev 'master|NAME' | awk {'print $1'}); do echo $i; oc -n $TARGETNS logs pod/${i} -c keepalived | grep -E "MASTER|BACKUP|FAULT" | grep -Ei 'ingress'; done >> $TARGETDIR/ingress_failover.log
  
  # Acquire configs:
- for i in $(oc get nodes | awk {'print $1'}); do echo $i; oc debug node/$i -- chroot /host sh -c "cat /etc/keepalived/keepalived.conf && ip -br -4 a"; echo "____"; done | tee keepalive_configs.out
+ for i in $(oc get nodes | awk {'print $1'}); do echo $i; oc debug node/$i -- chroot /host sh -c "cat /etc/keepalived/keepalived.conf && ip -br -4 a"; echo "____"; done | tee $TARGETDIR/keepalive_configs.out
+
+ # acquire logs:
+   for i in $(oc get pod -n $TARGETNS | grep keepalive | awk {'print $1'})
+     do echo $i
+      timeout 10 oc -n $TARGETNS logs $i -c keepalived >> $TARGETDIR/logs/${i}_keepalived.log
+        timeout 10 oc -n $TARGETNS logs $i -c keepalived -p >> $TARGETDIR/logs/${i}_keepalived.previous.log
+   done
+
+ # call subroutines:
+ vrrp_check
+ curl_tests
 }
 
 
@@ -185,9 +203,9 @@ full_report(){
         echo ""
         echo "Usage and arguments overview - review documentation for more details"
         echo "-h|--help) - print brief help details"
-        echo "--full) - run full report (includes namespace inspects, config extracts - more thorough)"
-        echo "--basic) - run basic report - default will also fire if no args included"
-        echo "--must-gather|--offline) - run report on static must-gather loaded with omc (omc use <mustgather>)"
+        echo "--full) - run full report (includes namespace inspects, curl checks, vrrp validation and more)"
+        echo "--basic) - run basic report"
+        echo "--must-gather) - run report on static must-gather loaded with omc (omc use <mustgather>)"
         echo "--vrrp) - run a brief 5s tcpdump on all nodes for VRRP traffic to log for cross-talk confirmation"
         echo "--validate) - run curl validation to confirm throughput of VIP and routers (ingress check)"
         echo ""
@@ -197,6 +215,8 @@ full_report(){
       --full)
         echo ""
         echo "running full report"
+        #create folder:
+        mkdir ${TARGETDIR}
         full_report
         exit 0
         ;;
@@ -204,6 +224,8 @@ full_report(){
       --basic)
         echo ""
         echo "running basic report"
+        #create folder:
+        mkdir ${TARGETDIR}
         basic_report
         exit 0
         ;;
@@ -211,6 +233,8 @@ full_report(){
       --vrrp)
         echo ""
         echo "running brief vrrp validation check"
+        #create folder:
+        mkdir ${TARGETDIR}
         vrrp_check
         exit 0
         ;;
@@ -218,6 +242,8 @@ full_report(){
       --must-gather)
         echo ""
         echo "running offline analysis report"
+        #create folder:
+        mkdir ${TARGETDIR}
         must-gather-report
         exit 0
         ;;
@@ -225,15 +251,20 @@ full_report(){
       --validate)
         echo ""
         echo "running health probe validation"
+        #create folder:
+        mkdir ${TARGETDIR}
         curl_tests
         exit 0
         ;;
 
       *)
-      # If no arguments supplied exit the loop and continue the report conditional below
-      echo "this script requires arguments - re-run with keepalive-gather.sh --help"
+      # If invalid arguments supplied exit the loop and continue the report conditional below
+      echo "invalid arg; re-run with keepalive-gather.sh --help"
         break
       #fi
         ;;
     esac
   done
+
+echo "report complete - now compiling tarball at $TARGETDIR.tar.gz"
+tar -czf $TARGETDIR.tar.gz ./$TARGETDIR
