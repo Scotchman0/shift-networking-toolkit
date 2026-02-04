@@ -266,5 +266,10 @@ full_report(){
     esac
   done
 
-echo "report complete - now compiling tarball at $TARGETDIR.tar.gz"
-tar -czf $TARGETDIR.tar.gz ./$TARGETDIR
+if [[ -d $TARGETDIR ]]
+ then
+   echo "report complete - now compiling tarball at $TARGETDIR.tar.gz"
+   tar -czf $TARGETDIR.tar.gz ./$TARGETDIR
+ else
+  exit 0
+fi
