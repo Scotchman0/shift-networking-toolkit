@@ -46,7 +46,7 @@ fi
   #overview grab:
   echo "Must-Gather reviewed: $(omc mg get | tail -n 1)" >> ${REPORT}
   for NS in $(echo $NAMESPACES); do
-    if [[ $(omc get pod -n ${NS} | grep -q "keepalived" | wc -l) -ne 0 ]]
+    if [[ $(omc get pod -n ${NS} | grep "keepalived" | wc -l) -ne 0 ]]
      then TARGETNS=${NS}
      echo "keepalived pods located in $TARGETNS"
      else 
@@ -75,13 +75,13 @@ fi
   # Timeline of failover (API):
   for i in $(omc get pods -o wide -n $TARGETNS | grep keepalive  | grep master | awk {'print $1'})
     do echo $i
-      omc logs pod/${i} -c keepalived | grep -E "MASTER|BACKUP" | grep -Ei 'api'
+      omc -n ${TARGETNS} logs pod/${i} -c keepalived | grep -E "MASTER|BACKUP" | grep -Ei 'api'
   done >> $TARGETDIR/api_failover.log
 
   # Timeline of failover (ingress):
   for i in $(omc get pods -o wide -n $TARGETNS | grep keepalive | awk {'print $1'})
     do echo $i
-      omc logs pod/${i} -c keepalived | grep -E "MASTER|BACKUP" | grep -Ei 'ingress'
+      omc -n ${TARGETNS} logs pod/${i} -c keepalived | grep -E "MASTER|BACKUP" | grep -Ei 'ingress'
   done >> $TARGETDIR/ingress_failover.log
 }
 
