@@ -8,6 +8,8 @@ This repository and all included scripts are debugging tools provided without wa
 # haproxy-gather.sh
 Can be used to gather a summary output of all router-pods statistics from your cluster at once along with haproxy.config for help in understanding more about how your cluster is routing traffic to it's backend pods.
 
+Usage: `./haproxy-gather.sh`
+
 Note that router pod hit statistics being gathered are subject to intermittent log clears, and so repeated gathers may be necessary to get a fully comprehensive view of activity. Stats are not persistent even through the lifespan of a container and are cleared frequently; They are reset to 0 every time haproxy.config reloads. You may find that this occurs very often in a cluster with a lot of churn/new pods/deployments - 5s. Or longer if deployments are static and routes aren't changing you may get a much larger sample size. You may need to run the haproxy-gather.sh script a few times to get a solid sample depending on your cluster configuration/time between test calls and gather run. 
 
 Usage on 3.11 versus 4.x:
@@ -34,3 +36,57 @@ A simple UBI dockerfile and companion pod.yaml that deploy a test suite pod to e
 
 # network-sos.sh
 A network-targeted data-dump pull that replicates the network plugin from sos for specific use-cases where sos-report cannot or will not complete network pulls on an impacted host. Must be run as root on the target node (chroot /host), and not from toolbox as it isn't escaping it's chroot state the way sos would inside a container. Tries to pull similar `sos_commands/networking/*` output for referencing directly with a time-stamped tarball creation.
+
+# digloop.sh
+A script to dig a target domain periodically until we encounter an unexpected result (no IPV4 returned) and then fire a trace to log the errant result.
+Usage: `./digloop.sh <FQDN>`
+Set `VERBOSE=false` to have a quieter report run
+
+# keepalived_check.sh
+A keepalived toolkit to quick-validate VIP placement, scrape details on live clusters and perform health checks. 
+See more here: https://access.redhat.com/articles/7137655
+Usage: `./keepalive_check.sh <option>`
+
+~~~
+Usage and arguments overview - review documentation for more details
+all commands can be run separately for simplified reporting, --full flag is best for diagnostics and support
+-h|--help) - print brief help details
+--full) - Run comprehensive analysis report (all tooling - uses debug shell)
+--basic) - run basic report (log gather, failover history and current vip placement overview)
+--vrrp) - run a brief 5s tcpdump on all nodes for VRRP (uses debug shell)
+--validate) - run curl validation to confirm throughput of VIP and routers (ingress check)
+--logs) - pull pod logs from keepalived project namespace for review
+--configs) - pull keepalived configs from nodes for review (uses debug shell)
+--must-gather) - run report on static must-gather loaded with omc (omc use <mustgather>)
+~~~
+
+# tcpanalyze
+A brief Pcap reader tool for fast summary output before deep dive. Runs in the local directory and reviews any files of type `*.pcap*` for a summary recap of packet flow and IPs.
+
+# network-sos.sh
+supplemental manual pull for sosreport for networking/ss/ethtool capture on target host
+largely attempting to replicate sos's network.py script for one-off gathers where the sosreport stalls before tagging network rules.
+Run as root on host node (not from within toolbox container)
+
+# DHCP-to-static.sh
+This script will suggest an nmcli string to set up static interfacing based on existing DHCP rules
+It is designed to aide in testing and caution should be used whenever possible. Not for use in production environments.
+does not actually execute any changes - just prints suggested config options. Written for OpenShift clusters using OVNkubernetes and will be aimed at 
+`br-ex` interface as the `primary` link.
+
+Example output:
+~~~
+sh-5.1# ./DHCP-to-static.sh 
+7: br-ex: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 10.0.0.192/21 brd 10.0.215.255 scope global dynamic noprefixroute br-ex
+    inet 169.254.0.2/17 brd 169.254.127.255 scope global br-ex
+suggested command to set up static interfacing (not executed, echoed only for review):
+-----
+#nmcli con add con-name eth0 type ethernet ifname eth0 ipv4.method manual ipv4.address 10.0.0.192/21 ipv4.gateway 10.0.0.254 ipv4.dns 10.0.0.26,10.0.0.25, ipv4.dns-search test-lab.cluster.domain.com,additional-search-1,additional-search-2,
+-----
+NOTE: Cluster domain search string: test-lab.cluster.domain.com should be automatically appended by the platform and may not need to be included in the above dns-search string.
+Do not apply this command unless you validate the result yourself first, applying invalid network configurations can result in a degraded cluster node state
+~~~
+
+# cross-talk-check.sh
+Assists with debugging network flow issues between nodes - validates that pods are able to communicate across nodes in the cluster and confirm CNI is healthy.
