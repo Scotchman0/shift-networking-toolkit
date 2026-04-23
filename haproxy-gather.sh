@@ -22,6 +22,7 @@ TARGETDIR=./haproxy-gather-${DATE}
 mkdir $TARGETDIR
 mkdir $TARGETDIR/raw_stats
 mkdir $TARGETDIR/haproxy_info
+mkdir $TARGETDIR/router-default-mapfiles
 
 #grab pod overview:
 oc get pods -n ${namespace} -o wide > $TARGETDIR/pod_overview.out
@@ -58,5 +59,17 @@ oc cp ${default}:haproxy.config -n ${namespace} ${TARGETDIR}/default_haproxy.con
 #gather haproxy.config from any other non-default router pods (shards)
 for i in $(oc get deployment -n ${namespace} | grep -v router-default | awk {'print $1'} | grep -v NAME); do a=$(oc get pod -n ${namespace} | grep ${i} | awk {'print $1'} | head -n 1); oc cp ${a}:haproxy.config -n ${namespace} $TARGETDIR/${i}_haproxy.config; done
 
+#gather ingresscontroller yaml configs from operator space:
+for i in $(oc get ingresscontroller -n openshift-ingress-operator | awk {'print $1'} | grep -v NAME); do oc get ingresscontroller/$i -o yaml -n openshift-ingress-operator > $TARGETDIR/${i}_ingresscontroller.yaml; done
+
+#gather map files from router-default pod 
+oc rsh ${default} sh -c "tar -czf /tmp/export.tar.gz *.map" && oc cp ${default}:/tmp/export.tar.gz $TARGETDIR/export.tar.gz
+tar -xf $TARGETDIR/export.tar.gz --directory $TARGETDIR/router-default-mapfiles/
+rm $TARGETDIR/export.tar.gz
+
 #tarball the contents
 tar czf ${TARGETDIR}.tar.gz $TARGETDIR/
+
+#report completion, exit
+echo "gather complete"
+exit 0
