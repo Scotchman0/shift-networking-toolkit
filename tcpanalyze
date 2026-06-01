@@ -18,9 +18,8 @@
 
 
 #=======================================
-#REVISION: 7/23/24
+#REVISION: 6/1/26
 #todo: add check that tshark exists, if not, fail
-#todo - allow a 
 DATE=$(date +"%Y-%m-%d-%H-%M")
 LOGPATH=${DATE}_tcpanalyze_results.out
 
@@ -47,10 +46,13 @@ echo "Total Tx Bytes observed in pcap: "; tshark -r $pcap -qz endpoints,ip | awk
 echo "tcp zero-windows observed: "; tshark -r $pcap -Y "tcp.analysis.zero_window" | wc -l; echo ""; \
 echo ""
 #SLOW PACKETS:
-echo "slow packets observed sorted by tcp.time_delta (tail -n 20):"; echo "frame   ip.src          ip.dst          tcp.time_delta  column info"; tshark -r $pcap -T fields -e frame.number -e ip.src -e ip.dst -e "tcp.time_delta" -e _ws.col.Info | sort -k4n -r | tail -n 20
+echo "slow packets observed sorted by tcp.time_delta (tail -n 20):"; echo "frame   ip.src          ip.dst          tcp.time_delta  tcp.stream  column info"; tshark -r $pcap -T fields -e frame.number -e ip.src -e ip.dst -e "tcp.time_delta" -e tcp.stream -e _ws.col.Info | sort -k4n -r | tail -n 20
 echo "==========================="
 echo ""
 done
+
+echo "example syntax for stream review from above output (for easier copy/paste):"
+echo "tshark -r <filename> -Y 'tcp.stream eq <number>' -T fields -e frame.number -e ip.src -e ip.dst -e tcp.time_delta -e _ws.col_Info"
 
 echo ""
 echo "##############################"
@@ -68,7 +70,5 @@ echo ""
 
 }
 
-#run the logic block and send errors like "this pcap was cut short in the middle of a packet"
-#to /dev/null so we only get valid results we care about viewing
 logic 2> /dev/null | tee $LOGPATH
 
