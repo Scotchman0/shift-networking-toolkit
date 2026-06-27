@@ -91,7 +91,13 @@ for SOURCE in ${DNSPODS}; do
       fi
     done
 
-    echo "${TARGETPOD} (${TARGETIP}) on host ${TARGETHOST} - Failure rate: ${FAILURE} / ${ATTEMPTS}"
+    #conditional alerting - only announce failures if there are some so that it's clear at a glance that there are no issues
+    if [[ ${FAILURE} = 0 ]]
+      then 
+            echo "${TARGETPOD} (${TARGETIP}) on host ${TARGETHOST} - Success"
+      else
+            echo "${TARGETPOD} (${TARGETIP}) on host ${TARGETHOST} - Connection Failures: ${FAILURE} / ${ATTEMPTS}"
+    fi
   done
 
   echo "";
@@ -106,5 +112,5 @@ fi
 }
 
 healthprobe
-echo "done"
+echo "script completed - see ${PROBELOG} and ${PROBEERR} for report details"
 exit 0

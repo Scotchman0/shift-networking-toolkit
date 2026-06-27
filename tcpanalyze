@@ -25,7 +25,6 @@ LOGPATH=${DATE}_tcpanalyze_results.out
 
 logic () {
 #analysis block
-echo "$(DATE)"
 echo ""
 
 #tshark -r ens3.pcap0 -Tfields -e frame.time_relative | sort -n | tail -1
