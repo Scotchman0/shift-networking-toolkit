@@ -52,7 +52,7 @@ echo ""
 done
 
 echo "example syntax for stream review from above output (for easier copy/paste):"
-echo "tshark -r <filename> -Y 'tcp.stream eq <number>' -T fields -e frame.number -e ip.src -e ip.dst -e tcp.time_delta -e _ws.col_Info"
+echo "tshark -r <filename> -Y 'tcp.stream eq <number>' -T fields -e frame.number -e ip.src -e ip.dst -e tcp.time_delta -e _ws.col.Info"
 
 echo ""
 echo "##############################"
