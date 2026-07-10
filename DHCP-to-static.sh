@@ -23,7 +23,6 @@ if ip addr show br-ex
     exit 1
 fi
 
-##BLOCKER - DEFINING A VARIABLE THAT CAN'T BE FOUND STALLS THE PROCESS?
 #set definitions
 NODEIP=$(ip -o -4 addr show br-ex | awk '!/169\.254/ {print $4}')
 NODEIPV6=$(ip -o -6 addr show br-ex | awk '!/169\.254/ {print $4}')
@@ -33,28 +32,6 @@ CLUSTERSEARCH=$(awk '/^search/ { print $2; }' /etc/resolv.conf)
 SEARCHDOMAIN=$(awk '/^search/ { $1=""; print $0 }' /etc/resolv.conf)
 NAMESERVERS=$(awk '/^nameserver/ { print $2; }' /etc/resolv.conf | grep -v $(echo ${NODEIP} | awk -F '/' {'print $1'}))
 
-#IPV4 ONLY --> baseline 
-#prep string:
-# #Is there already an nmconnection file?
-# if [ $(ls /etc/NetworkManager/system-connections | grep ${PRIMARYIFACE}) ]
-#   then 
-#     #iface exists as a connection file - is it auto?
-#     if nmcli con show ${PRIMARYIFACE} | grep ipv4.method | grep auto
-#       then
-#         #iface is method.auto
-#         ASSEMBLEDSTRING=$(echo "#nmcli con mod con-name ${PRIMARYIFACE} type ethernet ifname ${PRIMARYIFACE} ipv4.method manual ipv4.address ${NODEIP} ipv4.gateway ${GATEWAY} ipv4.dns $(for i in ${NAMESERVERS}; do echo -n ${i},; done) ipv4.dns-search $(for i in ${SEARCHDOMAIN}; do echo -n ${i},; done)")
-#       else
-#         #ipv4 method is static already! abort.
-#         echo "iface definition for ${PRIMARYIFACE} exists at /etc/NetworkManager/system-connections/ and is not ipv4.method=auto, aborting"
-#         exit 1
-#     fi
-#   else
-#     #iface doesn't exist as a static definition yet, so suggest creating it:
-#     ASSEMBLEDSTRING=$(echo "#nmcli con add con-name ${PRIMARYIFACE} type ethernet ifname ${PRIMARYIFACE} ipv4.method manual ipv4.address ${NODEIP} ipv4.gateway ${GATEWAY} ipv4.dns $(for i in ${NAMESERVERS}; do echo -n ${i},; done) ipv4.dns-search $(for i in ${SEARCHDOMAIN}; do echo -n ${i},; done)")
-# fi
-
-
-##TESTING ZONE:
 #prep string:
 #Is there already an nmconnection file?
 if [ $(ls /etc/NetworkManager/system-connections | grep ${PRIMARYIFACE}) ]
@@ -92,7 +69,7 @@ echo "suggested command to set up static interfacing (not executed, echoed only 
 echo "-----"
 echo "$ASSEMBLEDSTRING"
 echo "-----"
-echo "NOTE: If default gateway for IPV6 isn't defined, remove 'ipv6.gateway' from the string above to avoid syntax error, or set manually before applying."
+echo "NOTE: If default gateway for IPV6 isn't defined, remove 'ipv6.gateway' from the string above (if present) to avoid syntax error, or set manually before applying."
 echo "NOTE: Cluster domain search string: ${CLUSTERSEARCH} may be automatically appended by the platform and may not need to be included in the above dns-search string explicitly."
 echo "an explicit nameserver entry is required in a manual interface definition to succeed boot on RHCOS"
 echo "Do not apply this command unless you validate the result yourself first, applying invalid network configurations can result in a degraded cluster node state. Open a support ticket for assistance."
