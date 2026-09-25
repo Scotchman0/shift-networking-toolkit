@@ -5,6 +5,7 @@
 # recommended to encase this into a logic loop where it only fires if ovs-if-phys0.nmconnection is found at /etc/NetworkManager/system-connections/
 # this script ASSUMES that ovs-if-phys0 exists and is intended to replace/fix the bond that used to exist in it's place.
 # This script ASSUMES that ovs-if-phys0 has replaced an existing bond
+# IMPORTANT - this script defaults to DHCP for bond0 - you need to know if you WANT that. Please review lines [75 - 92] before running
 set -euo pipefail
 
 #note that bond0 is NOT a guaranteed name we need the primary bond used by br-ex
