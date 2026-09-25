@@ -62,7 +62,7 @@ echo "Detected cloned MAC: $CLONED_MAC"
 # acquire bond options
 BOND_OPTIONS=$(grep -E 'lacp_rate|miimon|mode|xmit_hash_policy' $OVS_IF_FILE)
 # append a comma, remove spaces:
-BOND_OPTIONS_FORMATTED=$(for i in $OPTIONS; do echo -n ${i},; done)
+BOND_OPTIONS_FORMATTED=$(for i in $BOND_OPTIONS; do echo -n ${i},; done)
 
 echo "===== deleting bad OVS bond profile ====="
 nmcli con delete "$OVS_IF_PROFILE" 2>/dev/null || true
